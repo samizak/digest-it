@@ -3,11 +3,26 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import SimpleHeader from "@/components/SimpleHeader";
-import { Loader2 } from "lucide-react";
+import { Loader2, Copy, Check } from "lucide-react";
+import Link from "next/link";
 
-const mockSummary = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent aliquam augue quis nulla cursus tristique. Etiam faucibus eros at commodo vestibulum. Fusce suscipit blandit nisi at varius. Sed et vehicula lectus. Duis faucibus justo at sodales consequat. Suspendisse id ligula augue. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Aliquam imperdiet nibh nec viverra malesuada. Aliquam gravida pellentesque ultrices.
+export default function SummaryPage() {
+  const [redditUrl, setRedditUrl] = useState("");
+  const [summary, setSummary] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submittedUrl, setSubmittedUrl] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const mockSummary = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent aliquam augue quis nulla cursus tristique. Etiam faucibus eros at commodo vestibulum. Fusce suscipit blandit nisi at varius. Sed et vehicula lectus. Duis faucibus justo at sodales consequat. Suspendisse id ligula augue. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Aliquam imperdiet nibh nec viverra malesuada. Aliquam gravida pellentesque ultrices.
 
 Aliquam erat volutpat. Pellentesque urna metus, feugiat id elit sed, tempor scelerisque nisl. Vestibulum non orci nulla. Maecenas id augue ligula. Cras risus dolor, malesuada non convallis et, porta et justo. Pellentesque auctor sem quis tellus convallis, nec interdum ante viverra. Nam viverra urna vel nunc tempor gravida. In accumsan leo vitae diam vestibulum aliquet. Interdum et malesuada fames ac ante ipsum primis in faucibus.
 Fusce aliquam augue vel condimentum efficitur. Phasellus feugiat tortor eget purus cursus, vitae lacinia turpis hendrerit. Aenean iaculis euismod sagittis. Aliquam suscipit odio quis suscipit ultricies. Nullam elit diam, mollis ac convallis vitae, malesuada at dolor. Etiam finibus nibh at molestie egestas. Nulla semper metus vel ex convallis sagittis. In iaculis velit non tellus tincidunt, id ultricies neque imperdiet. Etiam sed euismod ipsum, eu accumsan urna. Ut porttitor consequat auctor. Etiam eget magna vel erat fermentum sagittis lacinia eget enim.
@@ -57,23 +72,35 @@ Donec congue nibh vehicula, sagittis mi auctor, sodales sapien. Nulla nec lacini
 Mauris euismod commodo turpis non sodales. Vestibulum congue elit leo, tempor elementum dolor tempus id. Mauris eleifend sapien sit amet nunc lobortis, ac dictum risus mollis. Nullam quis ornare ipsum. Nullam cursus tempor tincidunt. Duis auctor libero ultricies est commodo elementum. Quisque ac ante a lacus finibus suscipit ac vitae nisl. Mauris varius ut est nec tincidunt. Aenean aliquam dolor non turpis vulputate tincidunt. In quis nulla sed dui vehicula interdum.
 `;
 
-export default function SummaryPage() {
-  const [redditUrl, setRedditUrl] = useState("");
-  const [summary, setSummary] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const handleCopy = () => {
+    if (summary) {
+      navigator.clipboard
+        .writeText(summary)
+        .then(() => {
+          setIsCopied(true);
+          setTimeout(() => setIsCopied(false), 2000);
+        })
+        .catch((err) => {
+          console.error("Failed to copy: ", err);
+        });
+    }
+  };
 
-  const handleSummarize = async (event: React.FormEvent) => {
+  const handleSummarize = (event: React.FormEvent) => {
     event.preventDefault();
     setSummary(null);
     setError(null);
+    setSubmittedUrl(null);
+    setIsCopied(false);
     setIsLoading(true);
 
     const isValidRedditUrl = redditUrl.includes("reddit.com/r/");
 
     if (isValidRedditUrl) {
+      const currentUrl = redditUrl;
       setTimeout(() => {
         setSummary(mockSummary);
+        setSubmittedUrl(currentUrl);
         setIsLoading(false);
       }, 3000);
     } else {
@@ -133,10 +160,37 @@ export default function SummaryPage() {
             </div>
           )}
 
-          {summary && !isLoading && (
+          {summary && !isLoading && submittedUrl && (
             <Card className="mt-6">
               <CardHeader>
-                <CardTitle>Summary</CardTitle>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>Summary</CardTitle>
+                    <CardDescription className="pt-1">
+                      Original thread:
+                      <Link
+                        href={submittedUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:text-primary text-xs break-all"
+                      >
+                        {submittedUrl}
+                      </Link>
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleCopy}
+                    aria-label="Copy summary"
+                  >
+                    {isCopied ? (
+                      <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">
