@@ -12,7 +12,7 @@ export default function Header() {
           <span>DigestIt</span>
         </div>
 
-        <nav className="flex items-center space-x-4">
+        <nav className="hidden md:flex flex-grow justify-center items-center space-x-6">
           <Link
             href="#features"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
@@ -37,6 +37,9 @@ export default function Header() {
           >
             FAQ
           </Link>
+        </nav>
+
+        <div className="flex items-center space-x-4">
           <ModeToggle />
           <Button variant="outline" size="sm" asChild>
             <Link href="/login">Log in</Link>
@@ -44,7 +47,7 @@ export default function Header() {
           <Button size="sm" asChild>
             <Link href="/signup">Sign up</Link>
           </Button>
-        </nav>
+        </div>
       </div>
     </header>
   );
