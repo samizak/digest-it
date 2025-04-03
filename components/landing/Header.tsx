@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { RssIcon as Reddit } from "lucide-react";
+import { ModeToggle } from "@/components/ModeToggle";
 
 export default function Header() {
   return (
@@ -36,6 +37,7 @@ export default function Header() {
           >
             FAQ
           </Link>
+          <ModeToggle />
           <Button variant="outline" size="sm" asChild>
             <Link href="/login">Log in</Link>
           </Button>
