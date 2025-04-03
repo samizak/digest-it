@@ -163,21 +163,8 @@ Mauris euismod commodo turpis non sodales. Vestibulum congue elit leo, tempor el
           {summary && !isLoading && submittedUrl && (
             <Card className="mt-6">
               <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>Summary</CardTitle>
-                    <CardDescription className="pt-1">
-                      Original thread:
-                      <Link
-                        href={submittedUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline hover:text-primary text-xs break-all"
-                      >
-                        {submittedUrl}
-                      </Link>
-                    </CardDescription>
-                  </div>
+                <div className="flex justify-between items-center mb-2">
+                  <CardTitle>Summary</CardTitle>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -191,6 +178,17 @@ Mauris euismod commodo turpis non sodales. Vestibulum congue elit leo, tempor el
                     )}
                   </Button>
                 </div>
+                <CardDescription className="pt-1">
+                  Original thread:
+                  <Link
+                    href={submittedUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-1 underline hover:text-primary text-xs break-all"
+                  >
+                    {submittedUrl}
+                  </Link>
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">
