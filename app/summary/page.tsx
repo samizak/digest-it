@@ -141,21 +141,24 @@ const summaryChunks = [
       </ul>
     </AnimatedChunk>
   ),
-  // Chunk 3: Top Insights
+  // Chunk 3: Top Insights (Updated Styling)
   (key: Key) => (
     <AnimatedChunk key={key} delay={0.1}>
-      <h2 className="text-xl font-semibold pt-4 not-prose">
+      {/* Main Heading */}
+      <h2 className="text-xl font-semibold pt-4 not-prose flex items-center gap-2">
         <span role="img" aria-label="light bulb">
           💡
-        </span>{" "}
-        Top Insights
+        </span>
+        <span>Top Insights</span>
       </h2>
-      <h3 className="text-lg font-semibold mt-2 not-prose">
+      {/* Sub Heading */}
+      <h3 className="text-lg font-semibold mt-3 not-prose flex items-center gap-2">
         <span role="img" aria-label="speech bubble">
           💬
-        </span>{" "}
-        Top Comment
+        </span>
+        <span>Top Comment</span>
       </h3>
+      {/* Comment Box */}
       <div className="border rounded p-3 bg-muted/50 mt-2 not-prose">
         <p className="text-muted-foreground italic">
           "{mockData.topComment.text}"
