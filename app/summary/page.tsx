@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, Key } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,60 +13,288 @@ import {
 import SimpleHeader from "@/components/SimpleHeader";
 import { Loader2, Copy, Check, ArrowBigUp } from "lucide-react";
 import Link from "next/link";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import AnimatedChunk from "@/components/AnimatedChunk";
+
+// Helper function for truncation
+const truncateUrl = (url: string, maxLength = 60): string => {
+  if (url.length <= maxLength) {
+    return url;
+  }
+  const start = url.substring(0, maxLength / 2);
+  const end = url.substring(url.length - maxLength / 2);
+  return `${start}...${end}`;
+};
+
+// Define Types for Mock Data (Optional but recommended)
+interface StatsData {
+  op: string;
+  subreddit: string;
+  created: string;
+  upvotes: string;
+  comments: number;
+}
+interface TopCommentData {
+  text: string;
+  user: string;
+  votes: number;
+}
+interface LinkData {
+  text: string;
+  url: string;
+}
+
+// Mock Data Object
+const mockData = {
+  quickGlance: `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent aliquam augue quis nulla cursus tristique. Etiam faucibus eros at commodo vestibulum. Fusce suscipit blandit nisi at varius. Sed et vehicula lectus. Duis faucibus justo at sodales consequat.`,
+  stats: {
+    op: "u/example_user",
+    subreddit: "r/AskReddit",
+    created: "2024-07-26 10:00 UTC",
+    upvotes: "1.2k",
+    comments: 458,
+  } as StatsData,
+  keyPoints: [
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    "Praesent aliquam augue quis nulla cursus tristique.",
+    "Etiam faucibus eros at commodo vestibulum.",
+    "Fusce suscipit blandit nisi at varius.",
+  ],
+  topComment: {
+    text: "Sed et vehicula lectus. Duis faucibus justo at sodales consequat. Suspendisse id ligula augue. Pellentesque habitant morbi tristique senectus et netus.",
+    user: "u/InsightfulUser",
+    votes: 128,
+  } as TopCommentData,
+  sentiment:
+    "Aliquam imperdiet nibh nec viverra malesuada. Aliquam gravida pellentesque ultrices. Nulla commodo fringilla pulvinar.",
+  links: [
+    { text: "Lorem ipsum link 1", url: "#" },
+    { text: "Praesent aliquam link 2", url: "#" },
+  ] as LinkData[],
+};
+
+// Define Summary Chunks (as functions returning JSX)
+const summaryChunks = [
+  // Chunk 0: Quick Glance
+  (key: Key) => (
+    <AnimatedChunk key={key}>
+      <h2 className="text-xl font-semibold not-prose">
+        <span role="img" aria-label="eyes">
+          👀
+        </span>{" "}
+        Quick Glance
+      </h2>
+      <p className="text-muted-foreground">{mockData.quickGlance}</p>
+    </AnimatedChunk>
+  ),
+  // Chunk 1: Thread Statistics
+  (key: Key) => (
+    <AnimatedChunk key={key} delay={0.1}>
+      <h2 className="text-xl font-semibold pt-4 not-prose">
+        <span role="img" aria-label="bar chart">
+          📊
+        </span>{" "}
+        Thread Statistics
+      </h2>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-muted-foreground not-prose">
+        <div>
+          <span className="font-medium text-foreground/90">OP:</span>{" "}
+          {mockData.stats.op}
+        </div>
+        <div>
+          <span className="font-medium text-foreground/90">Subreddit:</span>{" "}
+          {mockData.stats.subreddit}
+        </div>
+        <div>
+          <span className="font-medium text-foreground/90">Created:</span>{" "}
+          {mockData.stats.created}
+        </div>
+        <div>
+          <span className="font-medium text-foreground/90">Upvotes:</span>{" "}
+          {mockData.stats.upvotes}
+        </div>
+        <div>
+          <span className="font-medium text-foreground/90">Comments:</span>{" "}
+          {mockData.stats.comments}
+        </div>
+      </div>
+    </AnimatedChunk>
+  ),
+  // Chunk 2: Key Points
+  (key: Key) => (
+    <AnimatedChunk key={key} delay={0.1}>
+      <h2 className="text-xl font-semibold pt-4 not-prose">
+        <span role="img" aria-label="key">
+          🔑
+        </span>{" "}
+        Key Points
+      </h2>
+      <ul className="list-disc list-inside space-y-1 pl-4 text-muted-foreground">
+        {mockData.keyPoints.map((point, index) => (
+          <li key={index}>{point}</li>
+        ))}
+      </ul>
+    </AnimatedChunk>
+  ),
+  // Chunk 3: Top Insights
+  (key: Key) => (
+    <AnimatedChunk key={key} delay={0.1}>
+      <h2 className="text-xl font-semibold pt-4 not-prose">
+        <span role="img" aria-label="light bulb">
+          💡
+        </span>{" "}
+        Top Insights
+      </h2>
+      <h3 className="text-lg font-semibold mt-2 not-prose">
+        <span role="img" aria-label="speech bubble">
+          💬
+        </span>{" "}
+        Top Comment
+      </h3>
+      <div className="border rounded p-3 bg-muted/50 mt-2 not-prose">
+        <p className="text-muted-foreground italic">
+          "{mockData.topComment.text}"
+        </p>
+        <p className="text-xs text-right pt-1 text-muted-foreground/80 flex items-center justify-end">
+          <span>{mockData.topComment.user}</span>
+          <span className="mx-1">|</span>
+          <ArrowBigUp className="h-3.5 w-3.5 mr-0.5" />
+          <span>{mockData.topComment.votes}</span>
+        </p>
+      </div>
+    </AnimatedChunk>
+  ),
+  // Chunk 4: Sentiment Analysis
+  (key: Key) => (
+    <AnimatedChunk key={key} delay={0.1}>
+      <h2 className="text-xl font-semibold pt-4 not-prose">
+        <span role="img" aria-label="thinking face">
+          🤔
+        </span>{" "}
+        Sentiment Analysis
+      </h2>
+      <p className="text-muted-foreground">{mockData.sentiment}</p>
+    </AnimatedChunk>
+  ),
+  // Chunk 5: Links and Resources
+  (key: Key) => (
+    <AnimatedChunk key={key} delay={0.1}>
+      <h2 className="text-xl font-semibold pt-4 not-prose">
+        <span role="img" aria-label="link">
+          🔗
+        </span>{" "}
+        Links and Resources
+      </h2>
+      <ul className="list-disc list-inside space-y-1 pl-4 text-muted-foreground">
+        {mockData.links.map((link, index) => (
+          <li key={index}>
+            <a
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-primary"
+            >
+              {link.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </AnimatedChunk>
+  ),
+];
 
 export default function SummaryPage() {
   const [redditUrl, setRedditUrl] = useState("");
-  const [summary, setSummary] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submittedUrl, setSubmittedUrl] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
+  const [revealedChunks, setRevealedChunks] = useState<number[]>([]);
+  const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
 
-  const quickGlance = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent aliquam augue quis nulla cursus tristique. Etiam faucibus eros at commodo vestibulum. Fusce suscipit blandit nisi at varius. Sed et vehicula lectus. Duis faucibus justo at sodales consequat. Suspendisse id ligula augue. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Aliquam imperdiet nibh nec viverra malesuada. Aliquam gravida pellentesque ultrices.`;
+  // Function to get the full text summary for copying (Uses mockData)
+  const getFullSummaryText = (): string => {
+    let text = `Quick Glance:
+${mockData.quickGlance}
 
-  const mockSummary = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent aliquam augue quis nulla cursus tristique. Etiam faucibus eros at commodo vestibulum. Fusce suscipit blandit nisi at varius. Sed et vehicula lectus. Duis faucibus justo at sodales consequat. Suspendisse id ligula augue. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Aliquam imperdiet nibh nec viverra malesuada. Aliquam gravida pellentesque ultrices.
-
-Aliquam erat volutpat. Pellentesque urna metus, feugiat id elit sed, tempor scelerisque nisl. Vestibulum non orci nulla. Maecenas id augue ligula. Cras risus dolor, malesuada non convallis et, porta et justo. Pellentesque auctor sem quis tellus convallis, nec interdum ante viverra. Nam viverra urna vel nunc tempor gravida. In accumsan leo vitae diam vestibulum aliquet. Interdum et malesuada fames ac ante ipsum primis in faucibus.
-Fusce aliquam augue vel condimentum efficitur. Phasellus feugiat tortor eget purus cursus, vitae lacinia turpis hendrerit. Aenean iaculis euismod sagittis. Aliquam suscipit odio quis suscipit ultricies. Nullam elit diam, mollis ac convallis vitae, malesuada at dolor. Etiam finibus nibh at molestie egestas. Nulla semper metus vel ex convallis sagittis. In iaculis velit non tellus tincidunt, id ultricies neque imperdiet. Etiam sed euismod ipsum, eu accumsan urna. Ut porttitor consequat auctor. Etiam eget magna vel erat fermentum sagittis lacinia eget enim.
-
-Ut tellus sem, dapibus nec finibus vitae, mattis et tellus. Praesent efficitur bibendum tortor, eu blandit risus fringilla ac. Aliquam hendrerit ornare turpis, et varius quam consequat id. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Fusce dictum rutrum consectetur. Morbi non quam sed ante elementum condimentum ac sed diam. Nam maximus, eros in tempor pharetra, orci elit vulputate mauris, ut semper neque tellus vel nibh. Morbi commodo hendrerit lectus, a viverra turpis pretium eget. Suspendisse ex velit, consequat sit amet dignissim a, finibus sed nunc. Suspendisse ut faucibus orci, non ultrices arcu. Donec vel turpis enim. Vestibulum pulvinar sit amet purus ac laoreet. Maecenas molestie ligula mauris, sit amet lobortis ligula sagittis at. Integer porttitor, lorem non semper egestas, nulla enim facilisis elit, eget tincidunt erat mauris nec augue. Aenean finibus laoreet nisl sed vehicula.
-
-Suspendisse ut nunc lectus. Proin quis risus tristique, consequat ligula vitae, egestas risus. Sed euismod turpis eros, ut porta ipsum aliquam quis. Fusce lobortis hendrerit tortor non aliquet. Morbi lobortis mattis purus et ornare. In nec condimentum lacus, vitae eleifend lorem. Sed rhoncus urna id fermentum rutrum. Vestibulum sit amet nisi molestie, scelerisque nulla id, pharetra turpis.
-
-Nulla commodo fringilla pulvinar. Maecenas a est condimentum, tempor dolor dapibus, egestas odio. Nullam varius leo eu enim lobortis, id posuere mi condimentum. Praesent non risus ut ligula ullamcorper egestas. Duis gravida nisl metus, in rutrum magna dictum in. Cras id condimentum purus. Ut vitae neque id ipsum cursus commodo. Nunc gravida purus eu purus eleifend, sed aliquam ex malesuada. Integer sed odio ullamcorper, posuere purus ac, commodo nisi. Praesent molestie ex ac tellus ornare dictum. Vivamus mollis iaculis est, et elementum massa convallis sit amet. Vivamus consectetur massa ligula, quis faucibus nibh semper vel.
 `;
+    text += `Thread Statistics:
+OP: ${mockData.stats.op}, Subreddit: ${mockData.stats.subreddit}, Created: ${mockData.stats.created}, Upvotes: ${mockData.stats.upvotes}, Comments: ${mockData.stats.comments}
+
+`;
+    text += `Key Points:
+${mockData.keyPoints.map((p) => `- ${p}`).join("\n")}
+
+`;
+    text += `Top Comment (${mockData.topComment.user} | ${mockData.topComment.votes} votes):
+"${mockData.topComment.text}"
+
+`;
+    text += `Sentiment Analysis:
+${mockData.sentiment}
+
+`;
+    text += `Links:
+${mockData.links.map((l) => `- ${l.text} (${l.url})`).join("\n")}
+`;
+    return text;
+  };
 
   const handleCopy = () => {
-    if (summary) {
-      navigator.clipboard
-        .writeText(summary)
-        .then(() => {
-          setIsCopied(true);
-          setTimeout(() => setIsCopied(false), 2000);
-        })
-        .catch((err) => {
-          console.error("Failed to copy: ", err);
-        });
-    }
+    if (revealedChunks.length < summaryChunks.length) return;
+
+    const textToCopy = getFullSummaryText();
+    navigator.clipboard
+      .writeText(textToCopy)
+      .then(() => {
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      })
+      .catch((err) => {
+        console.error("Failed to copy: ", err);
+      });
   };
+
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach(clearTimeout);
+    };
+  }, []);
 
   const handleSummarize = (event: React.FormEvent) => {
     event.preventDefault();
-    setSummary(null);
     setError(null);
     setSubmittedUrl(null);
     setIsCopied(false);
+    setRevealedChunks([]);
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
     setIsLoading(true);
 
     const isValidRedditUrl = redditUrl.includes("reddit.com/r/");
 
     if (isValidRedditUrl) {
       const currentUrl = redditUrl;
-      setTimeout(() => {
-        setSummary(mockSummary);
-        setSubmittedUrl(currentUrl);
-        setIsLoading(false);
-      }, 3000);
+      setSubmittedUrl(currentUrl);
+
+      let delay = 300;
+      const delayIncrement = 250;
+
+      summaryChunks.forEach((_, index) => {
+        const timeoutId = setTimeout(() => {
+          setRevealedChunks((prev) => [...prev, index]);
+          if (index === summaryChunks.length - 1) {
+            setIsLoading(false);
+          }
+        }, delay);
+        timeoutsRef.current.push(timeoutId);
+        delay += delayIncrement;
+      });
     } else {
       setError(
         "Please provide a valid Reddit thread URL (e.g., reddit.com/r/...)."
@@ -115,7 +343,7 @@ Nulla commodo fringilla pulvinar. Maecenas a est condimentum, tempor dolor dapib
 
           {error && <p className="text-red-500 text-center">Error: {error}</p>}
 
-          {isLoading && (
+          {isLoading && revealedChunks.length === 0 && (
             <div className="flex justify-center items-center pt-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               <p className="ml-2 text-muted-foreground">
@@ -124,168 +352,70 @@ Nulla commodo fringilla pulvinar. Maecenas a est condimentum, tempor dolor dapib
             </div>
           )}
 
-          {summary && !isLoading && submittedUrl && (
-            <Card className="mt-6">
+          {revealedChunks.length > 0 && (
+            <Card className="mt-6 overflow-hidden">
               <CardHeader>
                 <div className="flex justify-between items-center mb-2">
                   <CardTitle>Summary</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleCopy}
-                    aria-label="Copy summary"
-                  >
-                    {isCopied ? (
-                      <Check className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
+                  <TooltipProvider delayDuration={100}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleCopy}
+                          aria-label="Copy summary"
+                          disabled={
+                            isLoading ||
+                            revealedChunks.length < summaryChunks.length
+                          }
+                        >
+                          {isCopied ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{isCopied ? "Copied!" : "Copy summary"}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
-                <CardDescription className="pt-1">
-                  Original thread:
-                  <Link
-                    href={submittedUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-1 underline hover:text-primary text-xs break-all"
-                  >
-                    {submittedUrl}
-                  </Link>
-                </CardDescription>
+                {submittedUrl && (
+                  <CardDescription className="pt-1">
+                    Original thread:
+                    <TooltipProvider delayDuration={100}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link
+                            href={submittedUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ml-1.5 underline hover:text-primary text-xs break-all"
+                          >
+                            {truncateUrl(submittedUrl, 70)}
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" align="start">
+                          <p className="max-w-xs break-all">{submittedUrl}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </CardDescription>
+                )}
               </CardHeader>
-              <CardContent className="prose prose-sm dark:prose-invert max-w-none space-y-4">
-                <h2 className="text-xl font-semibold">
-                  <span role="img" aria-label="eyes">
-                    👀
-                  </span>{" "}
-                  Quick Glance
-                </h2>
-                <p className="text-muted-foreground">{quickGlance}</p>
-
-                <h2 className="text-xl font-semibold pt-4">
-                  <span role="img" aria-label="bar chart">
-                    📊
-                  </span>{" "}
-                  Thread Statistics
-                </h2>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                  <div>
-                    <span className="font-medium text-foreground/90">OP:</span>{" "}
-                    u/example_user
+              <CardContent className="space-y-4 pt-4">
+                {revealedChunks
+                  .sort((a, b) => a - b)
+                  .map((index) => summaryChunks[index](index))}
+                {isLoading && revealedChunks.length > 0 && (
+                  <div className="flex items-center justify-center pt-4 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span>Loading more...</span>
                   </div>
-                  <div>
-                    <span className="font-medium text-foreground/90">
-                      Subreddit:
-                    </span>{" "}
-                    r/AskReddit
-                  </div>
-                  <div>
-                    <span className="font-medium text-foreground/90">
-                      Created:
-                    </span>{" "}
-                    2024-07-26 10:00 UTC
-                  </div>
-                  <div>
-                    <span className="font-medium text-foreground/90">
-                      Upvotes:
-                    </span>{" "}
-                    1.2k
-                  </div>
-                  <div>
-                    <span className="font-medium text-foreground/90">
-                      Comments:
-                    </span>{" "}
-                    458
-                  </div>
-                </div>
-
-                <h2 className="text-xl font-semibold pt-4">
-                  <span role="img" aria-label="key">
-                    🔑
-                  </span>{" "}
-                  Key Points
-                </h2>
-                <ul className="list-disc list-inside space-y-1 pl-4 text-muted-foreground">
-                  <li>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit
-                  </li>
-                  <li>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit
-                  </li>
-                  <li>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit
-                  </li>
-                  <li>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit
-                  </li>
-                </ul>
-
-                <h2 className="text-xl font-semibold pt-4">
-                  <span role="img" aria-label="light bulb">
-                    💡
-                  </span>{" "}
-                  Top Insights
-                </h2>
-                <h3 className="text-lg font-semibold">
-                  <span role="img" aria-label="speech bubble">
-                    💬
-                  </span>{" "}
-                  Top Comment
-                </h3>
-                <div className="border rounded p-3 bg-muted/50">
-                  <p className="text-muted-foreground italic">
-                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                    Praesent aliquam augue quis nulla cursus tristique. Etiam
-                    faucibus eros at commodo vestibulum. Fusce suscipit blandit
-                    nisi at varius. Sed et vehicula lectus. Duis faucibus justo
-                    at sodales consequat. Suspendisse id ligula augue.
-                    Pellentesque habitant morbi tristique senectus et netus et
-                    malesuada fames ac turpis egestas. Aliquam imperdiet nibh
-                    nec viverra malesuada. Aliquam gravida pellentesque
-                    ultrices."
-                  </p>
-                  <p className="text-xs text-right pt-1 text-muted-foreground/80 flex items-center justify-start">
-                    <span>u/reddituser</span>
-                    <span className="mx-1">|</span>
-                    <ArrowBigUp className="h-3.5 w-3.5 mr-0.5" />
-                    <span>94</span>
-                  </p>
-                </div>
-
-                <h2 className="text-xl font-semibold pt-4">
-                  <span role="img" aria-label="thinking face">
-                    🤔
-                  </span>{" "}
-                  Sentiment Analysis
-                </h2>
-                <p className="text-muted-foreground">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                  Praesent aliquam augue quis nulla cursus tristique. Etiam
-                  faucibus eros at commodo vestibulum. Fusce suscipit blandit
-                  nisi at varius. Sed et vehicula lectus. Duis faucibus justo at
-                </p>
-
-                <h2 className="text-xl font-semibold pt-4">
-                  <span role="img" aria-label="link">
-                    🔗
-                  </span>{" "}
-                  Links and Resources
-                </h2>
-                <ul className="list-disc list-inside space-y-1 pl-4 text-muted-foreground">
-                  <li>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit
-                  </li>
-                  <li>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit
-                  </li>
-                  <li>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit
-                  </li>
-                  <li>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit
-                  </li>
-                </ul>
+                )}
               </CardContent>
             </Card>
           )}
