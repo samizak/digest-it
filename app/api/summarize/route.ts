@@ -1,7 +1,13 @@
 // app/api/summarize/route.ts
 import { NextResponse } from "next/server";
-import fs from "fs/promises"; // Node.js file system module (use promises version)
-import path from "path"; // Node.js path module
+import fs from "fs/promises";
+import path from "path";
+import {
+  GoogleGenerativeAI,
+  HarmCategory,
+  HarmBlockThreshold,
+  GenerationConfig,
+} from "@google/generative-ai";
 
 // Define the expected structure of the request body
 interface SummarizeRequestBody {
@@ -28,8 +34,56 @@ interface SummaryResponse {
   links?: { text: string; url: string }[];
 }
 
+// --- Get API Key from Environment Variable ---
+const API_KEY = process.env.GOOGLE_API_KEY;
+
+if (!API_KEY) {
+  console.error("CRITICAL: GOOGLE_API_KEY environment variable is not set.");
+  // Optional: throw an error during server startup instead of handling it per request
+  // throw new Error("Missing GOOGLE_API_KEY environment variable");
+}
+// -------------------------------------------
+
+// --- Initialize Google AI Client ---
+const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
+// -----------------------------------
+
+// Configure safety settings (adjust as needed)
+const safetySettings = [
+  {
+    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+  },
+];
+
+// Configure generation settings
+const generationConfig: GenerationConfig = {
+  responseMimeType: "application/json",
+  temperature: 0.3,
+};
+
 export async function POST(request: Request) {
   console.log("Summarize API route hit");
+
+  if (!genAI) {
+    console.error("Google AI SDK not initialized due to missing API key.");
+    return NextResponse.json(
+      { error: "Server configuration error: Missing API key" },
+      { status: 500 }
+    );
+  }
 
   let requestBody: SummarizeRequestBody;
   let redditUrl: string;
@@ -37,25 +91,18 @@ export async function POST(request: Request) {
   // 1. Parse Request Body and Get URL
   try {
     requestBody = await request.json();
-    redditUrl = requestBody?.redditUrl ?? ""; // Use optional chaining and nullish coalescing
-
+    redditUrl = requestBody?.redditUrl ?? "";
     if (!redditUrl) {
-      console.error("Missing redditUrl in request body");
-      return NextResponse.json(
-        { error: "Missing redditUrl in request body" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing redditUrl" }, { status: 400 });
     }
-    console.log("Received URL:", redditUrl);
-
     // Basic validation (could reuse the regex from frontend or improve)
     if (!/^https?:\/\/(www\.|old\.)?reddit\.com\/r\//i.test(redditUrl)) {
-      console.error("Invalid Reddit URL format:", redditUrl);
       return NextResponse.json(
         { error: "Invalid Reddit URL format provided" },
         { status: 400 }
       );
     }
+    console.log("Received URL:", redditUrl);
   } catch (error) {
     console.error("Error parsing request body:", error);
     return NextResponse.json(
@@ -77,9 +124,6 @@ export async function POST(request: Request) {
     console.log("Prompt template read successfully.");
 
     // 3. --- PLACEHOLDER: Fetch Reddit Thread JSON Data ---
-    //    - Implement logic here to fetch the JSON data for the `redditUrl`.
-    //    - You might use the official Reddit API (requires auth) or a scraper (be careful with terms of service/IP bans).
-    //    - Let's assume you get the data into a variable `redditJsonData`.
     console.log("Placeholder: Fetching Reddit data for", redditUrl);
     const redditJsonData: any = {
       // Replace 'any' with a proper type if you have one
@@ -92,7 +136,8 @@ export async function POST(request: Request) {
             data: {
               title: "Example Post Title from API",
               author: "api_user",
-              selftext: "This is the post body from the API.",
+              selftext:
+                "This is the post body from the API. It mentions https://example.com/article as a source.",
               subreddit: "api_subreddit",
               created_utc: Math.floor(Date.now() / 1000) - 3600, // Example timestamp
               score: 55,
@@ -108,7 +153,7 @@ export async function POST(request: Request) {
                   kind: "t1",
                   data: {
                     author: "commenter1",
-                    body: "First comment text.",
+                    body: "First comment text, linking to https://anothersite.org/page.",
                     score: 10,
                     replies: "" /* ... */,
                   },
@@ -117,7 +162,7 @@ export async function POST(request: Request) {
                   kind: "t1",
                   data: {
                     author: "commenter2",
-                    body: "Second comment text.",
+                    body: "Second comment text, just regular discussion.",
                     score: 5,
                     replies: "" /* ... */,
                   },
@@ -128,65 +173,71 @@ export async function POST(request: Request) {
         ],
       },
     };
-    console.log("Placeholder: Reddit data fetched (using mock data).");
+    console.log("Placeholder: Using mock Reddit data.");
     // -------------------------------------------------------
 
     // 4. Inject Fetched Data into Prompt
-    // Ensure the fetched data is stringified if it's an object/array
-    const redditDataString = JSON.stringify(redditJsonData, null, 2); // Pretty print for readability in logs if needed
+    const redditDataString = JSON.stringify(redditJsonData, null, 2); // Use null, 2 for pretty printing if needed for debugging
     const finalPrompt = promptTemplate.replace(
       "[INSERT REDDIT THREAD JSON DATA HERE]",
       redditDataString
     );
-    console.log(
-      "Final prompt created (first 200 chars):",
-      finalPrompt.substring(0, 200) + "..."
-    );
+    // console.log("Final prompt created (first 200 chars):", finalPrompt.substring(0, 200) + "...");
 
-    // 5. --- PLACEHOLDER: Call LLM API ---
-    //    - Implement logic here to send `finalPrompt` to your chosen LLM API (OpenAI, Gemini, Anthropic, etc.).
-    //    - Use the appropriate SDK or fetch call.
-    //    - Handle authentication (API keys stored securely, e.g., in environment variables).
-    //    - Let's assume the LLM responds with a string containing the JSON object.
-    console.log("Placeholder: Calling LLM API...");
-    // Simulate LLM call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const llmResponseString = JSON.stringify({
-      // Simulate the JSON output structure
-      quickGlance: "This thread discusses X based on the mock API data.",
-      stats: {
-        op: redditJsonData.data.children[0].data.author,
-        subreddit: redditJsonData.data.children[0].data.subreddit,
-        created: new Date(
-          redditJsonData.data.children[0].data.created_utc * 1000
-        ).toISOString(),
-        upvotes: `${redditJsonData.data.children[0].data.score}`,
-        comments: redditJsonData.data.children[0].data.num_comments,
-      },
-      keyPoints: ["Mock point 1", "Mock point 2 from API data"],
-      topComment: {
-        text: redditJsonData.data.children[1].data.children[0].data.body,
-        user: redditJsonData.data.children[1].data.children[0].data.author,
-        votes: redditJsonData.data.children[1].data.children[0].data.score,
-      },
-      sentiment: "Mock sentiment: Positive.",
-      links: [],
+    // 5. --- Call Gemini API ---
+    console.log("Calling Gemini API...");
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-pro-exp-03-25", // Using your specified experimental model
+      safetySettings: safetySettings,
+      generationConfig: generationConfig,
     });
-    console.log(
-      "Placeholder: LLM API response received (using mock response)."
-    );
+
+    const result = await model.generateContent(finalPrompt);
+    const response = result.response;
+
+    if (!response || !response.text) {
+      console.error(
+        "Gemini API Error: No response or text found.",
+        response?.promptFeedback
+      );
+      if (response?.promptFeedback?.blockReason) {
+        console.error(
+          `Content blocked: ${response.promptFeedback.blockReason}`,
+          response.promptFeedback.safetyRatings
+        );
+        return NextResponse.json(
+          {
+            error: `Content blocked by API: ${response.promptFeedback.blockReason}`,
+            details: response.promptFeedback.safetyRatings,
+          },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json(
+        { error: "Failed to get valid response from LLM" },
+        { status: 500 }
+      );
+    }
+
+    const llmResponseString = response.text();
+    console.log("Gemini API response received.");
+    // console.log("Raw LLM Response String for Parsing:", llmResponseString); // Uncomment for deep debugging
     // ----------------------------------------------------
 
     // 6. Parse LLM Response
     let summaryJson: SummaryResponse;
     try {
-      summaryJson = JSON.parse(llmResponseString);
+      // Clean the response string: Remove potential markdown code fences
+      const cleanedLlmResponseString = llmResponseString
+        .replace(/^```json\s*|```$/g, "")
+        .trim();
+      summaryJson = JSON.parse(cleanedLlmResponseString);
       console.log("LLM response parsed successfully.");
     } catch (parseError) {
       console.error("Error parsing LLM response JSON:", parseError);
-      console.error("LLM Response String:", llmResponseString); // Log the raw response
+      console.error("LLM Response String (raw):", llmResponseString); // Log the raw response that failed parsing
       return NextResponse.json(
-        { error: "Failed to parse summary from LLM" },
+        { error: "Failed to parse summary from LLM response" },
         { status: 500 }
       );
     }
@@ -196,11 +247,10 @@ export async function POST(request: Request) {
     return NextResponse.json(summaryJson, { status: 200 });
   } catch (error) {
     console.error("Error processing summarization request:", error);
-    // Log the specific error if needed
-    // if (error instanceof Error) { console.error(error.message); }
-    return NextResponse.json(
-      { error: "An internal server error occurred" },
-      { status: 500 }
-    );
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "An unknown internal error occurred";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
