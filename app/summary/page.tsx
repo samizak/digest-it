@@ -31,6 +31,18 @@ const truncateUrl = (url: string, maxLength = 60): string => {
   return `${start}...${end}`;
 };
 
+// Helper function for Reddit Thread URL Validation
+const isValidRedditThreadUrl = (url: string): boolean => {
+  // Regex to match patterns like:
+  // https://www.reddit.com/r/subreddit/comments/post_id/...
+  // https://reddit.com/r/subreddit/comments/post_id/...
+  // https://old.reddit.com/r/subreddit/comments/post_id/...
+  // Allows for optional www/old subdomain, requires /r/, subreddit, /comments/, post_id
+  const redditThreadRegex =
+    /^https?:\/\/(www\.|old\.)?reddit\.com\/r\/[a-zA-Z0-9_]+\/comments\/[a-zA-Z0-9]+/i;
+  return redditThreadRegex.test(url);
+};
+
 // Define Types for Mock Data (Optional but recommended)
 interface StatsData {
   op: string;
@@ -279,9 +291,8 @@ ${mockData.links.map((l) => `- ${l.text} (${l.url})`).join("\n")}
     timeoutsRef.current = [];
     setIsLoading(true);
 
-    const isValidRedditUrl = redditUrl.includes("reddit.com/r/");
-
-    if (isValidRedditUrl) {
+    // Use the new validation function
+    if (isValidRedditThreadUrl(redditUrl)) {
       const currentUrl = redditUrl;
       setSubmittedUrl(currentUrl);
 
@@ -299,8 +310,9 @@ ${mockData.links.map((l) => `- ${l.text} (${l.url})`).join("\n")}
         delay += delayIncrement;
       });
     } else {
+      // Update error message for clarity
       setError(
-        "Please provide a valid Reddit thread URL (e.g., reddit.com/r/...)."
+        "Please paste a valid Reddit thread URL (e.g., www.reddit.com/r/subreddit/comments/...)"
       );
       setIsLoading(false);
     }
