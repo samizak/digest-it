@@ -164,6 +164,43 @@ Nulla commodo fringilla pulvinar. Maecenas a est condimentum, tempor dolor dapib
                 <p className="text-muted-foreground">{quickGlance}</p>
 
                 <h2 className="text-xl font-semibold pt-4">
+                  <span role="img" aria-label="bar chart">
+                    📊
+                  </span>{" "}
+                  Thread Statistics
+                </h2>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                  <div>
+                    <span className="font-medium text-foreground/90">OP:</span>{" "}
+                    u/example_user
+                  </div>
+                  <div>
+                    <span className="font-medium text-foreground/90">
+                      Subreddit:
+                    </span>{" "}
+                    r/AskReddit
+                  </div>
+                  <div>
+                    <span className="font-medium text-foreground/90">
+                      Created:
+                    </span>{" "}
+                    2024-07-26 10:00 UTC
+                  </div>
+                  <div>
+                    <span className="font-medium text-foreground/90">
+                      Upvotes:
+                    </span>{" "}
+                    1.2k
+                  </div>
+                  <div>
+                    <span className="font-medium text-foreground/90">
+                      Comments:
+                    </span>{" "}
+                    458
+                  </div>
+                </div>
+
+                <h2 className="text-xl font-semibold pt-4">
                   <span role="img" aria-label="key">
                     🔑
                   </span>{" "}
@@ -217,6 +254,19 @@ Nulla commodo fringilla pulvinar. Maecenas a est condimentum, tempor dolor dapib
                 </div>
 
                 <h2 className="text-xl font-semibold pt-4">
+                  <span role="img" aria-label="thinking face">
+                    🤔
+                  </span>{" "}
+                  Sentiment Analysis
+                </h2>
+                <p className="text-muted-foreground">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                  Praesent aliquam augue quis nulla cursus tristique. Etiam
+                  faucibus eros at commodo vestibulum. Fusce suscipit blandit
+                  nisi at varius. Sed et vehicula lectus. Duis faucibus justo at
+                </p>
+
+                <h2 className="text-xl font-semibold pt-4">
                   <span role="img" aria-label="link">
                     🔗
                   </span>{" "}
@@ -236,19 +286,6 @@ Nulla commodo fringilla pulvinar. Maecenas a est condimentum, tempor dolor dapib
                     Lorem ipsum dolor sit amet, consectetur adipiscing elit
                   </li>
                 </ul>
-
-                <h2 className="text-xl font-semibold pt-4">
-                  <span role="img" aria-label="thinking face">
-                    🤔
-                  </span>{" "}
-                  Sentiment Analysis
-                </h2>
-                <p className="text-muted-foreground">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                  Praesent aliquam augue quis nulla cursus tristique. Etiam
-                  faucibus eros at commodo vestibulum. Fusce suscipit blandit
-                  nisi at varius. Sed et vehicula lectus. Duis faucibus justo at
-                </p>
               </CardContent>
             </Card>
           )}
