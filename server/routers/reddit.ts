@@ -2,88 +2,17 @@ import { z } from 'zod';
 import { publicProcedure, router } from '../trpc';
 import fs from 'fs/promises';
 import path from 'path';
-import {
-  GoogleGenerativeAI,
-  HarmCategory,
-  HarmBlockThreshold,
-  GenerationConfig,
-} from "@google/generative-ai";
+import { SummaryData } from "@/lib/types/summaryTypes";
+import { 
+  extractOP, 
+  extractSubreddit, 
+  extractCommentCount, 
+  extractCreatedDate, 
+  extractUpvotes 
+} from "@/lib/utils/redditDataExtractor";
+import { generateSummary } from "@/lib/services/geminiService";
 
-// Initialize Google AI Client
-const API_KEY = process.env.GOOGLE_API_KEY;
-const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
-
-// Configure safety settings
-const safetySettings = [
-  {
-    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-  },
-];
-
-// Configure generation settings
-const generationConfig: GenerationConfig = {
-  responseMimeType: "application/json",
-  temperature: 0.3,
-};
-
-// Helper functions to extract data from Reddit JSON
-function extractOP(data: any): string {
-  try {
-    return data[0]?.data?.children[0]?.data?.author || "Unknown";
-  } catch (e) {
-    return "Unknown";
-  }
-}
-
-function extractSubreddit(data: any): string {
-  try {
-    return data[0]?.data?.children[0]?.data?.subreddit_name_prefixed || 
-           "r/" + (data[0]?.data?.children[0]?.data?.subreddit || "Unknown");
-  } catch (e) {
-    return "Unknown";
-  }
-}
-
-function extractCommentCount(data: any): number {
-  try {
-    return data[0]?.data?.children[0]?.data?.num_comments || 0;
-  } catch (e) {
-    return 0;
-  }
-}
-
-function extractCreatedDate(data: any): string {
-  try {
-    const timestamp = data[0]?.data?.children[0]?.data?.created_utc;
-    if (timestamp) {
-      return new Date(timestamp * 1000).toISOString();
-    }
-    return "Unknown";
-  } catch (e) {
-    return "Unknown";
-  }
-}
-
-function extractUpvotes(data: any): string {
-  try {
-    return data[0]?.data?.children[0]?.data?.score?.toString() || "0";
-  } catch (e) {
-    return "0";
-  }
-}
+// Remove duplicate Gemini initialization code
 
 export const redditRouter = router({
   getRedditJson: publicProcedure
@@ -117,11 +46,7 @@ export const redditRouter = router({
       redditUrl: z.string(),
       redditData: z.any()
     }))
-    .mutation(async ({ input }) => {
-      if (!genAI) {
-        throw new Error("Server configuration error: Missing API key");
-      }
-      
+    .mutation(async ({ input }): Promise<SummaryData> => {
       // Read Prompt Template
       const promptFilePath = path.join(
         process.cwd(),
@@ -146,24 +71,8 @@ export const redditRouter = router({
         redditDataString
       );
       
-      // Call Gemini API
-      const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-pro-exp-03-25",
-        safetySettings: safetySettings,
-        generationConfig: generationConfig,
-      });
-      
-      const result = await model.generateContent(finalPrompt);
-      const response = result.response;
-      
-      if (!response || !response.text) {
-        if (response?.promptFeedback?.blockReason) {
-          throw new Error(`Content blocked by API: ${response.promptFeedback.blockReason}`);
-        }
-        throw new Error("Failed to get valid response from LLM");
-      }
-      
-      const llmResponseString = response.text();
+      // Call Gemini API using the service
+      const llmResponseString = await generateSummary(finalPrompt);
       
       // Parse LLM Response
       try {
