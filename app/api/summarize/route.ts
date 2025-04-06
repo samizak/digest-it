@@ -8,31 +8,7 @@ import {
   HarmBlockThreshold,
   GenerationConfig,
 } from "@google/generative-ai";
-
-// Define the expected structure of the request body
-interface SummarizeRequestBody {
-  redditUrl?: string;
-}
-
-// Define the expected structure of the LLM's successful response (adjust if needed)
-interface SummaryResponse {
-  quickGlance?: string;
-  stats?: {
-    op?: string;
-    subreddit?: string;
-    created?: string;
-    upvotes?: string;
-    comments?: number;
-  };
-  keyPoints?: string[];
-  topComment?: {
-    text?: string;
-    user?: string;
-    votes?: number;
-  };
-  sentiment?: string;
-  links?: { text: string; url: string }[];
-}
+import { SummaryData } from "@/lib/types/summaryTypes"; // Import the shared type
 
 // --- Get API Key from Environment Variable ---
 const API_KEY = process.env.GOOGLE_API_KEY;
@@ -94,7 +70,7 @@ export async function POST(request: Request) {
     requestBody = await request.json();
     redditUrl = requestBody?.redditUrl ?? "";
     redditData = requestBody?.redditData;
-    
+
     if (!redditUrl) {
       return NextResponse.json({ error: "Missing redditUrl" }, { status: 400 });
     }
@@ -128,11 +104,11 @@ export async function POST(request: Request) {
 
     // 3. Use Reddit Data from frontend or fetch if not provided
     let redditJsonData: any;
-    
+
     if (redditData) {
       console.log("Using Reddit data provided by frontend");
       redditJsonData = redditData;
-      
+
       // Log some basic info from the data to verify
       console.log("Reddit data summary:");
       console.log("- OP:", extractOP(redditJsonData));
@@ -216,14 +192,14 @@ export async function POST(request: Request) {
     // ----------------------------------------------------
 
     // 6. Parse LLM Response
-    let summaryJson: SummaryResponse;
+    let summaryJson: SummaryData; // Changed from SummaryResponse to SummaryData
     try {
       // Clean the response string: Remove potential markdown code fences
       const cleanedLlmResponseString = llmResponseString
         .replace(/^```json\s*|```$/g, "")
         .trim();
       summaryJson = JSON.parse(cleanedLlmResponseString);
-      
+
       // Enhance the response with extracted data if needed
       if (!summaryJson.stats || Object.keys(summaryJson.stats).length === 0) {
         console.log("No stats in LLM response, adding extracted data");
@@ -232,10 +208,10 @@ export async function POST(request: Request) {
           subreddit: extractSubreddit(redditJsonData),
           created: extractCreatedDate(redditJsonData),
           upvotes: extractUpvotes(redditJsonData),
-          comments: extractCommentCount(redditJsonData)
+          comments: extractCommentCount(redditJsonData),
         };
       }
-      
+
       console.log("LLM response parsed successfully.");
     } catch (parseError) {
       console.error("Error parsing LLM response JSON:", parseError);
@@ -270,8 +246,10 @@ function extractOP(data: any): string {
 
 function extractSubreddit(data: any): string {
   try {
-    return data[0]?.data?.children[0]?.data?.subreddit_name_prefixed || 
-           "r/" + (data[0]?.data?.children[0]?.data?.subreddit || "Unknown");
+    return (
+      data[0]?.data?.children[0]?.data?.subreddit_name_prefixed ||
+      "r/" + (data[0]?.data?.children[0]?.data?.subreddit || "Unknown")
+    );
   } catch (e) {
     return "Unknown";
   }
@@ -304,5 +282,3 @@ function extractUpvotes(data: any): string {
     return "0";
   }
 }
-
-// Add more extraction functions as needed
