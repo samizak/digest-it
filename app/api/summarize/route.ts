@@ -85,13 +85,16 @@ export async function POST(request: Request) {
     );
   }
 
-  let requestBody: SummarizeRequestBody;
+  let requestBody: any;
   let redditUrl: string;
+  let redditData: any;
 
   // 1. Parse Request Body and Get URL
   try {
     requestBody = await request.json();
     redditUrl = requestBody?.redditUrl ?? "";
+    redditData = requestBody?.redditData;
+    
     if (!redditUrl) {
       return NextResponse.json({ error: "Missing redditUrl" }, { status: 400 });
     }
@@ -123,66 +126,52 @@ export async function POST(request: Request) {
     const promptTemplate = await fs.readFile(promptFilePath, "utf-8");
     console.log("Prompt template read successfully.");
 
-    // 3. --- PLACEHOLDER: Fetch Reddit Thread JSON Data ---
-    console.log("Placeholder: Fetching Reddit data for", redditUrl);
-    const redditJsonData: any = {
-      // Replace 'any' with a proper type if you have one
-      // Example structure - REPLACE WITH ACTUAL FETCHED DATA
-      kind: "Listing",
-      data: {
-        children: [
-          {
-            kind: "t3", // Post
-            data: {
-              title: "Example Post Title from API",
-              author: "api_user",
-              selftext:
-                "This is the post body from the API. It mentions https://example.com/article as a source.",
-              subreddit: "api_subreddit",
-              created_utc: Math.floor(Date.now() / 1000) - 3600, // Example timestamp
-              score: 55,
-              num_comments: 3,
-              // ... other post fields
+    // 3. Use Reddit Data from frontend or fetch if not provided
+    let redditJsonData: any;
+    
+    if (redditData) {
+      console.log("Using Reddit data provided by frontend");
+      redditJsonData = redditData;
+      
+      // Log some basic info from the data to verify
+      console.log("Reddit data summary:");
+      console.log("- OP:", extractOP(redditJsonData));
+      console.log("- Subreddit:", extractSubreddit(redditJsonData));
+      console.log("- Comments:", extractCommentCount(redditJsonData));
+    } else {
+      // Fallback to mock data if needed (your existing mock data)
+      console.log("WARNING: No Reddit data provided, using mock data");
+      redditJsonData = {
+        // Your existing mock data
+        kind: "Listing",
+        data: {
+          children: [
+            {
+              kind: "t3", // Post
+              data: {
+                title: "Example Post Title from API",
+                author: "api_user",
+                selftext:
+                  "This is the post body from the API. It mentions https://example.com/article as a source.",
+                subreddit: "api_subreddit",
+                created_utc: Math.floor(Date.now() / 1000) - 3600, // Example timestamp
+                score: 55,
+                num_comments: 3,
+                // ... other post fields
+              },
             },
-          },
-          {
-            kind: "Listing", // Comments
-            data: {
-              children: [
-                {
-                  kind: "t1",
-                  data: {
-                    author: "commenter1",
-                    body: "First comment text, linking to https://anothersite.org/page.",
-                    score: 10,
-                    replies: "" /* ... */,
-                  },
-                },
-                {
-                  kind: "t1",
-                  data: {
-                    author: "commenter2",
-                    body: "Second comment text, just regular discussion.",
-                    score: 5,
-                    replies: "" /* ... */,
-                  },
-                },
-              ],
-            },
-          },
-        ],
-      },
-    };
-    console.log("Placeholder: Using mock Reddit data.");
-    // -------------------------------------------------------
+            // ... rest of mock data
+          ],
+        },
+      };
+    }
 
     // 4. Inject Fetched Data into Prompt
-    const redditDataString = JSON.stringify(redditJsonData, null, 2); // Use null, 2 for pretty printing if needed for debugging
+    const redditDataString = JSON.stringify(redditJsonData, null, 2);
     const finalPrompt = promptTemplate.replace(
       "[INSERT REDDIT THREAD JSON DATA HERE]",
       redditDataString
     );
-    // console.log("Final prompt created (first 200 chars):", finalPrompt.substring(0, 200) + "...");
 
     // 5. --- Call Gemini API ---
     console.log("Calling Gemini API...");
@@ -256,8 +245,7 @@ export async function POST(request: Request) {
 }
 
 // Helper functions to extract data from Reddit JSON
-// These are examples - implement according to your needs
-function extractOP(data: any) {
+function extractOP(data: any): string {
   try {
     return data[0]?.data?.children[0]?.data?.author || "Unknown";
   } catch (e) {
@@ -265,14 +253,41 @@ function extractOP(data: any) {
   }
 }
 
-function extractSubreddit(data: any) {
+function extractSubreddit(data: any): string {
   try {
-    return (
-      data[0]?.data?.children[0]?.data?.subreddit_name_prefixed || "Unknown"
-    );
+    return data[0]?.data?.children[0]?.data?.subreddit_name_prefixed || 
+           "r/" + (data[0]?.data?.children[0]?.data?.subreddit || "Unknown");
   } catch (e) {
     return "Unknown";
   }
 }
 
-// Implement other extraction functions similarly
+function extractCommentCount(data: any): number {
+  try {
+    return data[0]?.data?.children[0]?.data?.num_comments || 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function extractCreatedDate(data: any): string {
+  try {
+    const timestamp = data[0]?.data?.children[0]?.data?.created_utc;
+    if (timestamp) {
+      return new Date(timestamp * 1000).toISOString();
+    }
+    return "Unknown";
+  } catch (e) {
+    return "Unknown";
+  }
+}
+
+function extractUpvotes(data: any): string {
+  try {
+    return data[0]?.data?.children[0]?.data?.score?.toString() || "0";
+  } catch (e) {
+    return "0";
+  }
+}
+
+// Add more extraction functions as needed
