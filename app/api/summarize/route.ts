@@ -138,6 +138,8 @@ export async function POST(request: Request) {
       console.log("- OP:", extractOP(redditJsonData));
       console.log("- Subreddit:", extractSubreddit(redditJsonData));
       console.log("- Comments:", extractCommentCount(redditJsonData));
+      console.log("- Created:", extractCreatedDate(redditJsonData));
+      console.log("- Upvotes:", extractUpvotes(redditJsonData));
     } else {
       // Fallback to mock data if needed (your existing mock data)
       console.log("WARNING: No Reddit data provided, using mock data");
@@ -221,6 +223,19 @@ export async function POST(request: Request) {
         .replace(/^```json\s*|```$/g, "")
         .trim();
       summaryJson = JSON.parse(cleanedLlmResponseString);
+      
+      // Enhance the response with extracted data if needed
+      if (!summaryJson.stats || Object.keys(summaryJson.stats).length === 0) {
+        console.log("No stats in LLM response, adding extracted data");
+        summaryJson.stats = {
+          op: extractOP(redditJsonData),
+          subreddit: extractSubreddit(redditJsonData),
+          created: extractCreatedDate(redditJsonData),
+          upvotes: extractUpvotes(redditJsonData),
+          comments: extractCommentCount(redditJsonData)
+        };
+      }
+      
       console.log("LLM response parsed successfully.");
     } catch (parseError) {
       console.error("Error parsing LLM response JSON:", parseError);
