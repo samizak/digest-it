@@ -379,7 +379,7 @@ export default function SummaryPage() {
     timeoutsRef.current.forEach(clearTimeout);
     timeoutsRef.current = [];
     setIsLoading(true);
-
+  
     if (!isValidRedditThreadUrl(redditUrl)) {
       setError(
         "Please paste a valid Reddit thread URL (e.g., www.reddit.com/r/subreddit/comments/...)"
@@ -387,9 +387,9 @@ export default function SummaryPage() {
       setIsLoading(false);
       return;
     }
-
+  
     setSubmittedUrl(redditUrl);
-
+  
     try {
       // First, fetch the raw Reddit JSON data
       console.log("Frontend: Fetching Reddit JSON data...");
@@ -398,7 +398,7 @@ export default function SummaryPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ redditUrl: redditUrl }),
       });
-
+  
       if (!redditJsonResponse.ok) {
         const errorData = await redditJsonResponse
           .json()
@@ -408,9 +408,9 @@ export default function SummaryPage() {
           errorData.error || `Reddit JSON API failed with status ${redditJsonResponse.status}`
         );
       }
-
+  
       const redditData = await redditJsonResponse.json();
-      console.log("Frontend: Received Reddit JSON data", redditData);
+      console.log("Frontend: Received Reddit JSON data");
       
       // Now, send the Reddit data to the summarize API
       console.log("Frontend: Sending request to summarize API...");
@@ -422,9 +422,9 @@ export default function SummaryPage() {
           redditData: redditData 
         }),
       });
-
+  
       console.log("Frontend: Received response status:", response.status);
-
+  
       if (!response.ok) {
         const errorData = await response
           .json()
@@ -434,7 +434,7 @@ export default function SummaryPage() {
           errorData.error || `API request failed with status ${response.status}`
         );
       }
-
+  
       const data: SummaryData = await response.json();
       console.log("Frontend: Received summary data:", data);
       setSummaryData(data); // Trigger the useEffect
