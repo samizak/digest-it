@@ -43,6 +43,14 @@ const isValidRedditThreadUrl = (url: string): boolean => {
   return redditThreadRegex.test(url);
 };
 
+// Helper function to extract post ID from Reddit URL
+const extractRedditPostId = (url: string): string | null => {
+  // Match the post ID from URLs like:
+  // https://www.reddit.com/r/subreddit/comments/post_id/...
+  const match = url.match(/\/comments\/([a-zA-Z0-9]+)/i);
+  return match ? match[1] : null;
+};
+
 // Define Types for Mock Data (Optional but recommended)
 interface StatsData {
   op?: string;
@@ -383,11 +391,36 @@ export default function SummaryPage() {
     setSubmittedUrl(redditUrl);
 
     try {
-      console.log("Frontend: Sending request...");
-      const response = await fetch("/api/summarize", {
+      // First, fetch the raw Reddit JSON data
+      console.log("Frontend: Fetching Reddit JSON data...");
+      const redditJsonResponse = await fetch("/api/reddit-json", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ redditUrl: redditUrl }),
+      });
+
+      if (!redditJsonResponse.ok) {
+        const errorData = await redditJsonResponse
+          .json()
+          .catch(() => ({ error: "Failed to parse error response" }));
+        console.error("Frontend: Reddit JSON API Error:", errorData);
+        throw new Error(
+          errorData.error || `Reddit JSON API failed with status ${redditJsonResponse.status}`
+        );
+      }
+
+      const redditData = await redditJsonResponse.json();
+      console.log("Frontend: Received Reddit JSON data");
+      
+      // Now, send the Reddit data to the summarize API
+      console.log("Frontend: Sending request to summarize API...");
+      const response = await fetch("/api/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          redditUrl: redditUrl,
+          redditData: redditData 
+        }),
       });
 
       console.log("Frontend: Received response status:", response.status);
@@ -406,7 +439,7 @@ export default function SummaryPage() {
       console.log("Frontend: Received summary data:", data);
       setSummaryData(data); // Trigger the useEffect
     } catch (err) {
-      console.error("Frontend: Error calling summarize API:", err);
+      console.error("Frontend: Error in summarize process:", err);
       const errorMessage =
         err instanceof Error ? err.message : "An unknown error occurred";
       setError(errorMessage);
