@@ -8,6 +8,13 @@ import Cta from "@/components/landing/Cta";
 import Footer from "@/components/landing/Footer";
 import AnimateOnScroll from "@/components/AnimateOnScroll";
 
+// Create a wrapper component for sections with the same animation delay
+const AnimatedSection = ({ children }: { children: React.ReactNode }) => (
+  <AnimateOnScroll delay={0.1}>
+    {children}
+  </AnimateOnScroll>
+);
+
 export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden">
@@ -16,21 +23,21 @@ export default function LandingPage() {
         <AnimateOnScroll>
           <Hero />
         </AnimateOnScroll>
-        <AnimateOnScroll delay={0.1}>
+        <AnimatedSection>
           <Features />
-        </AnimateOnScroll>
-        <AnimateOnScroll delay={0.1}>
+        </AnimatedSection>
+        <AnimatedSection>
           <HowItWorks />
-        </AnimateOnScroll>
-        <AnimateOnScroll delay={0.1}>
+        </AnimatedSection>
+        <AnimatedSection>
           <Pricing />
-        </AnimateOnScroll>
-        <AnimateOnScroll delay={0.1}>
+        </AnimatedSection>
+        <AnimatedSection>
           <Faq />
-        </AnimateOnScroll>
-        <AnimateOnScroll delay={0.1}>
+        </AnimatedSection>
+        <AnimatedSection>
           <Cta />
-        </AnimateOnScroll>
+        </AnimatedSection>
       </main>
       <Footer />
     </div>
