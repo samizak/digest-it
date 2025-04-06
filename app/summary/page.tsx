@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Key } from "react";
+import { useState, useEffect, useRef, Key, JSX } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,55 +45,63 @@ const isValidRedditThreadUrl = (url: string): boolean => {
 
 // Define Types for Mock Data (Optional but recommended)
 interface StatsData {
-  op: string;
-  subreddit: string;
-  created: string;
-  upvotes: string;
-  comments: number;
+  op?: string;
+  subreddit?: string;
+  created?: string;
+  upvotes?: string;
+  comments?: number;
 }
 interface TopCommentData {
-  text: string;
-  user: string;
-  votes: number;
+  text?: string;
+  user?: string;
+  votes?: number;
 }
 interface LinkData {
   text: string;
   url: string;
 }
+interface SummaryData {
+  quickGlance?: string;
+  stats?: StatsData;
+  keyPoints?: string[];
+  topComment?: TopCommentData;
+  sentiment?: string;
+  links?: LinkData[];
+}
 
 // Mock Data Object
-const mockData = {
-  quickGlance: `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent aliquam augue quis nulla cursus tristique. Etiam faucibus eros at commodo vestibulum. Fusce suscipit blandit nisi at varius. Sed et vehicula lectus. Duis faucibus justo at sodales consequat.`,
-  stats: {
-    op: "u/example_user",
-    subreddit: "r/AskReddit",
-    created: "2024-07-26 10:00 UTC",
-    upvotes: "1.2k",
-    comments: 458,
-  } as StatsData,
-  keyPoints: [
-    "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    "Praesent aliquam augue quis nulla cursus tristique.",
-    "Etiam faucibus eros at commodo vestibulum.",
-    "Fusce suscipit blandit nisi at varius.",
-  ],
-  topComment: {
-    text: "Sed et vehicula lectus. Duis faucibus justo at sodales consequat. Suspendisse id ligula augue. Pellentesque habitant morbi tristique senectus et netus.",
-    user: "u/InsightfulUser",
-    votes: 128,
-  } as TopCommentData,
-  sentiment:
-    "Aliquam imperdiet nibh nec viverra malesuada. Aliquam gravida pellentesque ultrices. Nulla commodo fringilla pulvinar.",
-  links: [
-    { text: "Lorem ipsum link 1", url: "#" },
-    { text: "Praesent aliquam link 2", url: "#" },
-  ] as LinkData[],
-};
+// const mockData = {
+//   quickGlance: `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent aliquam augue quis nulla cursus tristique. Etiam faucibus eros at commodo vestibulum. Fusce suscipit blandit nisi at varius. Sed et vehicula lectus. Duis faucibus justo at sodales consequat.`,
+//   stats: {
+//     op: "u/example_user",
+//     subreddit: "r/AskReddit",
+//     created: "2024-07-26 10:00 UTC",
+//     upvotes: "1.2k",
+//     comments: 458,
+//   } as StatsData,
+//   keyPoints: [
+//     "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+//     "Praesent aliquam augue quis nulla cursus tristique.",
+//     "Etiam faucibus eros at commodo vestibulum.",
+//     "Fusce suscipit blandit nisi at varius.",
+//   ],
+//   topComment: {
+//     text: "Sed et vehicula lectus. Duis faucibus justo at sodales consequat. Suspendisse id ligula augue. Pellentesque habitant morbi tristique senectus et netus.",
+//     user: "u/InsightfulUser",
+//     votes: 128,
+//   } as TopCommentData,
+//   sentiment:
+//     "Aliquam imperdiet nibh nec viverra malesuada. Aliquam gravida pellentesque ultrices. Nulla commodo fringilla pulvinar.",
+//   links: [
+//     { text: "Lorem ipsum link 1", url: "#" },
+//     { text: "Praesent aliquam link 2", url: "#" },
+//   ] as LinkData[],
+// };
 
 // Define Summary Chunks (as functions returning JSX)
 const summaryChunks = [
   // Chunk 0: Quick Glance
-  (key: Key) => (
+  (key: Key, data: SummaryData) => (
     <AnimatedChunk key={key}>
       <h2 className="text-xl font-semibold not-prose">
         <span role="img" aria-label="eyes">
@@ -101,11 +109,11 @@ const summaryChunks = [
         </span>{" "}
         Quick Glance
       </h2>
-      <p className="text-muted-foreground">{mockData.quickGlance}</p>
+      <p className="text-muted-foreground">{data.quickGlance}</p>
     </AnimatedChunk>
   ),
   // Chunk 1: Thread Statistics
-  (key: Key) => (
+  (key: Key, data: SummaryData) => (
     <AnimatedChunk key={key} delay={0.1}>
       <h2 className="text-xl font-semibold pt-4 not-prose">
         <span role="img" aria-label="bar chart">
@@ -116,29 +124,29 @@ const summaryChunks = [
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-muted-foreground not-prose">
         <div>
           <span className="font-medium text-foreground/90">OP:</span>{" "}
-          {mockData.stats.op}
+          {data.stats?.op}
         </div>
         <div>
           <span className="font-medium text-foreground/90">Subreddit:</span>{" "}
-          {mockData.stats.subreddit}
+          {data.stats?.subreddit}
         </div>
         <div>
           <span className="font-medium text-foreground/90">Created:</span>{" "}
-          {mockData.stats.created}
+          {data.stats?.created}
         </div>
         <div>
           <span className="font-medium text-foreground/90">Upvotes:</span>{" "}
-          {mockData.stats.upvotes}
+          {data.stats?.upvotes}
         </div>
         <div>
           <span className="font-medium text-foreground/90">Comments:</span>{" "}
-          {mockData.stats.comments}
+          {data.stats?.comments}
         </div>
       </div>
     </AnimatedChunk>
   ),
   // Chunk 2: Key Points
-  (key: Key) => (
+  (key: Key, data: SummaryData) => (
     <AnimatedChunk key={key} delay={0.1}>
       <h2 className="text-xl font-semibold pt-4 not-prose">
         <span role="img" aria-label="key">
@@ -147,14 +155,14 @@ const summaryChunks = [
         Key Points
       </h2>
       <ul className="list-disc list-inside space-y-1 pl-4 text-muted-foreground">
-        {mockData.keyPoints.map((point, index) => (
+        {data.keyPoints?.map((point, index) => (
           <li key={index}>{point}</li>
         ))}
       </ul>
     </AnimatedChunk>
   ),
   // Chunk 3: Top Insights (Updated Styling)
-  (key: Key) => (
+  (key: Key, data: SummaryData) => (
     <AnimatedChunk key={key} delay={0.1}>
       {/* Main Heading */}
       <h2 className="text-xl font-semibold pt-4 not-prose flex items-center gap-2">
@@ -173,19 +181,19 @@ const summaryChunks = [
       {/* Comment Box */}
       <div className="border rounded p-3 bg-muted/50 mt-2 not-prose">
         <p className="text-muted-foreground italic">
-          "{mockData.topComment.text}"
+          "{data.topComment?.text}"
         </p>
         <p className="text-xs text-right pt-1 text-muted-foreground/80 flex items-center justify-end">
-          <span>{mockData.topComment.user}</span>
+          <span>{data.topComment?.user}</span>
           <span className="mx-1">|</span>
           <ArrowBigUp className="h-3.5 w-3.5 mr-0.5" />
-          <span>{mockData.topComment.votes}</span>
+          <span>{data.topComment?.votes}</span>
         </p>
       </div>
     </AnimatedChunk>
   ),
   // Chunk 4: Sentiment Analysis
-  (key: Key) => (
+  (key: Key, data: SummaryData) => (
     <AnimatedChunk key={key} delay={0.1}>
       <h2 className="text-xl font-semibold pt-4 not-prose">
         <span role="img" aria-label="thinking face">
@@ -193,11 +201,11 @@ const summaryChunks = [
         </span>{" "}
         Sentiment Analysis
       </h2>
-      <p className="text-muted-foreground">{mockData.sentiment}</p>
+      <p className="text-muted-foreground">{data.sentiment}</p>
     </AnimatedChunk>
   ),
   // Chunk 5: Links and Resources
-  (key: Key) => (
+  (key: Key, data: SummaryData) => (
     <AnimatedChunk key={key} delay={0.1}>
       <h2 className="text-xl font-semibold pt-4 not-prose">
         <span role="img" aria-label="link">
@@ -206,7 +214,7 @@ const summaryChunks = [
         Links and Resources
       </h2>
       <ul className="list-disc list-inside space-y-1 pl-4 text-muted-foreground">
-        {mockData.links.map((link, index) => (
+        {data.links?.map((link, index) => (
           <li key={index}>
             <a
               href={link.url}
@@ -223,46 +231,90 @@ const summaryChunks = [
   ),
 ];
 
+// Define the keys of SummaryData as a type for type safety
+type SummaryDataKey = keyof SummaryData;
+
+// Define the order of sections to display
+const sectionOrder: SummaryDataKey[] = [
+  "quickGlance",
+  "stats",
+  "keyPoints",
+  "topComment",
+  "sentiment",
+  "links",
+];
+
+// Function to render the appropriate chunk based on section key
+const renderChunk = (
+  key: string,
+  index: Key,
+  data: SummaryData | null
+): JSX.Element | null => {
+  if (!data) return null;
+
+  switch (key) {
+    case "quickGlance":
+      return summaryChunks[0](index, data);
+    case "stats":
+      return summaryChunks[1](index, data);
+    case "keyPoints":
+      return summaryChunks[2](index, data);
+    case "topComment":
+      return summaryChunks[3](index, data);
+    case "sentiment":
+      return summaryChunks[4](index, data);
+    case "links":
+      return summaryChunks[5](index, data);
+    default:
+      return null;
+  }
+};
+
 export default function SummaryPage() {
   const [redditUrl, setRedditUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submittedUrl, setSubmittedUrl] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
-  const [revealedChunks, setRevealedChunks] = useState<number[]>([]);
+  const [revealedSections, setRevealedSections] = useState<string[]>([]);
+  const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
 
-  // Function to get the full text summary for copying (Uses mockData)
   const getFullSummaryText = (): string => {
-    let text = `Quick Glance:
-${mockData.quickGlance}
-
-`;
-    text += `Thread Statistics:
-OP: ${mockData.stats.op}, Subreddit: ${mockData.stats.subreddit}, Created: ${mockData.stats.created}, Upvotes: ${mockData.stats.upvotes}, Comments: ${mockData.stats.comments}
-
-`;
-    text += `Key Points:
-${mockData.keyPoints.map((p) => `- ${p}`).join("\n")}
-
-`;
-    text += `Top Comment (${mockData.topComment.user} | ${mockData.topComment.votes} votes):
-"${mockData.topComment.text}"
-
-`;
-    text += `Sentiment Analysis:
-${mockData.sentiment}
-
-`;
-    text += `Links:
-${mockData.links.map((l) => `- ${l.text} (${l.url})`).join("\n")}
-`;
-    return text;
+    if (!summaryData) return "";
+    let text = `Quick Glance:\n${summaryData.quickGlance || "N/A"}\n\n`;
+    if (summaryData.stats) {
+      text += `Thread Statistics:\nOP: ${
+        summaryData.stats.op || "N/A"
+      }, Subreddit: ${summaryData.stats.subreddit || "N/A"}, Created: ${
+        summaryData.stats.created || "N/A"
+      }, Upvotes: ${summaryData.stats.upvotes || "N/A"}, Comments: ${
+        summaryData.stats.comments ?? "N/A"
+      }\n\n`;
+    }
+    if (summaryData.keyPoints && summaryData.keyPoints.length > 0) {
+      text += `Key Points:\n${summaryData.keyPoints
+        .map((p) => `- ${p}`)
+        .join("\n")}\n\n`;
+    }
+    if (summaryData.topComment) {
+      text += `Top Comment (${summaryData.topComment.user || "N/A"} | ${
+        summaryData.topComment.votes ?? "N/A"
+      } votes):\n"${summaryData.topComment.text || "N/A"}"\n\n`;
+    }
+    if (summaryData.sentiment) {
+      text += `Sentiment Analysis:\n${summaryData.sentiment}\n\n`;
+    }
+    if (summaryData.links && summaryData.links.length > 0) {
+      text += `Links:\n${summaryData.links
+        .map((l) => `- ${l.text} (${l.url})`)
+        .join("\n")}\n`;
+    }
+    return text.trim();
   };
 
   const handleCopy = () => {
-    if (revealedChunks.length < summaryChunks.length) return;
-
+    if (!summaryData) return;
     const textToCopy = getFullSummaryText();
     navigator.clipboard
       .writeText(textToCopy)
@@ -281,40 +333,86 @@ ${mockData.links.map((l) => `- ${l.text} (${l.url})`).join("\n")}
     };
   }, []);
 
-  const handleSummarize = (event: React.FormEvent) => {
+  useEffect(() => {
+    if (summaryData) {
+      setIsLoading(false);
+
+      timeoutsRef.current.forEach(clearTimeout);
+      timeoutsRef.current = [];
+      setRevealedSections([]);
+
+      let delay = 100;
+      const delayIncrement = 200;
+
+      sectionOrder.forEach((sectionKey) => {
+        const sectionData = summaryData[sectionKey];
+        // Check if data exists and is not an empty array
+        if (
+          sectionData &&
+          !(Array.isArray(sectionData) && sectionData.length === 0)
+        ) {
+          const timeoutId = setTimeout(() => {
+            setRevealedSections((prev) => [...prev, sectionKey]);
+          }, delay);
+          timeoutsRef.current.push(timeoutId);
+          delay += delayIncrement;
+        }
+      });
+    }
+  }, [summaryData]);
+
+  const handleSummarize = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
     setSubmittedUrl(null);
     setIsCopied(false);
-    setRevealedChunks([]);
+    setSummaryData(null);
+    setRevealedSections([]);
     timeoutsRef.current.forEach(clearTimeout);
     timeoutsRef.current = [];
     setIsLoading(true);
 
-    // Use the new validation function
-    if (isValidRedditThreadUrl(redditUrl)) {
-      const currentUrl = redditUrl;
-      setSubmittedUrl(currentUrl);
-
-      let delay = 300;
-      const delayIncrement = 250;
-
-      summaryChunks.forEach((_, index) => {
-        const timeoutId = setTimeout(() => {
-          setRevealedChunks((prev) => [...prev, index]);
-          if (index === summaryChunks.length - 1) {
-            setIsLoading(false);
-          }
-        }, delay);
-        timeoutsRef.current.push(timeoutId);
-        delay += delayIncrement;
-      });
-    } else {
-      // Update error message for clarity
+    if (!isValidRedditThreadUrl(redditUrl)) {
       setError(
         "Please paste a valid Reddit thread URL (e.g., www.reddit.com/r/subreddit/comments/...)"
       );
       setIsLoading(false);
+      return;
+    }
+
+    setSubmittedUrl(redditUrl);
+
+    try {
+      console.log("Frontend: Sending request...");
+      const response = await fetch("/api/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ redditUrl: redditUrl }),
+      });
+
+      console.log("Frontend: Received response status:", response.status);
+
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Failed to parse error response" }));
+        console.error("Frontend: API Error Response:", errorData);
+        throw new Error(
+          errorData.error || `API request failed with status ${response.status}`
+        );
+      }
+
+      const data: SummaryData = await response.json();
+      console.log("Frontend: Received summary data:", data);
+      setSummaryData(data); // Trigger the useEffect
+    } catch (err) {
+      console.error("Frontend: Error calling summarize API:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "An unknown error occurred";
+      setError(errorMessage);
+      setIsLoading(false);
+      setSubmittedUrl(null);
+      setSummaryData(null);
     }
   };
 
@@ -358,7 +456,7 @@ ${mockData.links.map((l) => `- ${l.text} (${l.url})`).join("\n")}
 
           {error && <p className="text-red-500 text-center">Error: {error}</p>}
 
-          {isLoading && revealedChunks.length === 0 && (
+          {isLoading && !summaryData && (
             <div className="flex justify-center items-center pt-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               <p className="ml-2 text-muted-foreground">
@@ -367,7 +465,7 @@ ${mockData.links.map((l) => `- ${l.text} (${l.url})`).join("\n")}
             </div>
           )}
 
-          {revealedChunks.length > 0 && (
+          {summaryData && (
             <Card className="mt-6 overflow-hidden">
               <CardHeader>
                 <div className="flex justify-between items-center mb-2">
@@ -380,10 +478,7 @@ ${mockData.links.map((l) => `- ${l.text} (${l.url})`).join("\n")}
                           size="icon"
                           onClick={handleCopy}
                           aria-label="Copy summary"
-                          disabled={
-                            isLoading ||
-                            revealedChunks.length < summaryChunks.length
-                          }
+                          disabled={!summaryData}
                         >
                           {isCopied ? (
                             <Check className="h-4 w-4 text-green-500" />
@@ -422,15 +517,29 @@ ${mockData.links.map((l) => `- ${l.text} (${l.url})`).join("\n")}
                 )}
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
-                {revealedChunks
-                  .sort((a, b) => a - b)
-                  .map((index) => summaryChunks[index](index))}
-                {isLoading && revealedChunks.length > 0 && (
-                  <div className="flex items-center justify-center pt-4 text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    <span>Loading more...</span>
-                  </div>
-                )}
+                {sectionOrder
+                  .filter((sectionKey) => revealedSections.includes(sectionKey))
+                  .map((sectionKey) =>
+                    renderChunk(sectionKey, sectionKey, summaryData)
+                  )}
+                {/* Optional: Loading indicator while sections are revealing */}
+                {(isLoading ||
+                  (summaryData &&
+                    revealedSections.length <
+                      sectionOrder.filter(
+                        (key) =>
+                          summaryData[key] &&
+                          !(
+                            Array.isArray(summaryData[key]) &&
+                            (summaryData[key] as any[]).length === 0
+                          )
+                      ).length)) &&
+                  revealedSections.length > 0 && (
+                    <div className="flex items-center justify-center pt-4 text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <span>Loading sections...</span>
+                    </div>
+                  )}
               </CardContent>
             </Card>
           )}
