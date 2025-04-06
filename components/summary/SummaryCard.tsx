@@ -31,7 +31,6 @@ interface SummaryCardProps {
     index: Key,
     data: SummaryData | null
   ) => JSX.Element | null;
-  getFullSummaryText: () => string;
 }
 
 export default function SummaryCard({
@@ -41,9 +40,42 @@ export default function SummaryCard({
   revealedSections,
   sectionOrder,
   renderChunk,
-  getFullSummaryText,
 }: SummaryCardProps) {
   const [isCopied, setIsCopied] = useState(false);
+
+  // Move the getFullSummaryText function here
+  const getFullSummaryText = (): string => {
+    if (!summaryData) return "";
+    let text = `Quick Glance:\n${summaryData.quickGlance || "N/A"}\n\n`;
+    if (summaryData.stats) {
+      text += `Thread Statistics:\nOP: ${
+        summaryData.stats.op || "N/A"
+      }, Subreddit: ${summaryData.stats.subreddit || "N/A"}, Created: ${
+        summaryData.stats.created || "N/A"
+      }, Upvotes: ${summaryData.stats.upvotes || "N/A"}, Comments: ${
+        summaryData.stats.comments ?? "N/A"
+      }\n\n`;
+    }
+    if (summaryData.keyPoints && summaryData.keyPoints.length > 0) {
+      text += `Key Points:\n${summaryData.keyPoints
+        .map((p) => `- ${p}`)
+        .join("\n")}\n\n`;
+    }
+    if (summaryData.topComment) {
+      text += `Top Comment (${summaryData.topComment.user || "N/A"} | ${
+        summaryData.topComment.votes ?? "N/A"
+      } votes):\n"${summaryData.topComment.text || "N/A"}"\n\n`;
+    }
+    if (summaryData.sentiment) {
+      text += `Sentiment Analysis:\n${summaryData.sentiment}\n\n`;
+    }
+    if (summaryData.links && summaryData.links.length > 0) {
+      text += `Links:\n${summaryData.links
+        .map((l) => `- ${l.text} (${l.url})`)
+        .join("\n")}\n`;
+    }
+    return text.trim();
+  };
 
   const handleCopy = () => {
     if (!summaryData) return;
@@ -116,7 +148,6 @@ export default function SummaryCard({
           .map((sectionKey) =>
             renderChunk(sectionKey, sectionKey, summaryData)
           )}
-        {/* Optional: Loading indicator while sections are revealing */}
         {(isLoading ||
           (summaryData &&
             revealedSections.length <
