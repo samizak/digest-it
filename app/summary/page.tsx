@@ -410,7 +410,7 @@ export default function SummaryPage() {
       }
 
       const redditData = await redditJsonResponse.json();
-      console.log("Frontend: Received Reddit JSON data");
+      console.log("Frontend: Received Reddit JSON data", redditData);
       
       // Now, send the Reddit data to the summarize API
       console.log("Frontend: Sending request to summarize API...");

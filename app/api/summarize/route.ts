@@ -254,3 +254,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
+
+// Helper functions to extract data from Reddit JSON
+// These are examples - implement according to your needs
+function extractOP(data: any) {
+  try {
+    return data[0]?.data?.children[0]?.data?.author || "Unknown";
+  } catch (e) {
+    return "Unknown";
+  }
+}
+
+function extractSubreddit(data: any) {
+  try {
+    return (
+      data[0]?.data?.children[0]?.data?.subreddit_name_prefixed || "Unknown"
+    );
+  } catch (e) {
+    return "Unknown";
+  }
+}
+
+// Implement other extraction functions similarly
