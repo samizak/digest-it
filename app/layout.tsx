@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/SmoothScroll";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { TRPCProvider } from './providers';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,22 +22,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
-      >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <SmoothScroll>{children}</SmoothScroll>
-        </ThemeProvider>
+    <html lang="en">
+      <body>
+        <TRPCProvider>
+          {children}
+        </TRPCProvider>
       </body>
     </html>
   );
