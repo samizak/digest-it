@@ -5,7 +5,6 @@ import { ArrowBigUp } from "lucide-react";
 import AnimatedChunk from "@/components/AnimatedChunk";
 import { SummaryData } from "@/lib/types/summaryTypes";
 
-// Define Summary Chunks (as functions returning JSX)
 export const summaryChunks = [
   // Chunk 0: Quick Glance
   (key: Key, data: SummaryData) => (
@@ -61,11 +60,16 @@ export const summaryChunks = [
         </span>{" "}
         Key Points
       </h2>
-      <ul className="list-disc list-inside space-y-1 pl-4 text-muted-foreground">
-        {data.keyPoints?.map((point, index) => (
-          <li key={index}>{point}</li>
-        ))}
-      </ul>
+      <div className="bg-secondary/50 rounded-lg p-4 mt-2">
+        <div className="space-y-2 pl-1">
+          {data.keyPoints?.map((point, index) => (
+            <div key={index} className="flex items-start gap-3">
+              <span className="text-sm">•</span>
+              <p className="text-sm text-muted-foreground">{point}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </AnimatedChunk>
   ),
   // Chunk 3: Top Insights (Updated Styling)
