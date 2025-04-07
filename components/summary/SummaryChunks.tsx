@@ -89,13 +89,27 @@ export const summaryChunks = [
         </span>
         <span>Top Comment</span>
       </h3>
-      {/* Comment Box */}
+      {/* Comment Box for Top Comment */}
       <div className="border rounded p-3 bg-muted/50 mt-2 not-prose">
         <p className="text-muted-foreground italic">
           "{data.topComment?.text}"
         </p>
         <p className="text-xs text-right pt-1 text-muted-foreground/80 flex items-center justify-end">
-          <span>{data.topComment?.user}</span>
+          {data.topComment?.user && data.topComment.user !== "[deleted]" ? (
+            <a
+              href={`https://www.reddit.com/user/${data.topComment.user.replace(
+                "u/",
+                ""
+              )}/`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline hover:text-primary"
+            >
+              {data.topComment.user}
+            </a>
+          ) : (
+            <span>{data.topComment?.user || "[deleted]"}</span> // Fallback for missing or [deleted] user
+          )}
           <span className="mx-1">|</span>
           <ArrowBigUp className="h-3.5 w-3.5 mr-0.5" />
           <span>{data.topComment?.votes}</span>
@@ -113,14 +127,28 @@ export const summaryChunks = [
         </span>
         <span>Best Comment</span>
       </h2>
-      {/* Comment Box - Reusing Top Comment styling */}
+      {/* Comment Box for Best Comment */}
       {data.bestComment?.text ? (
         <div className="border rounded p-3 bg-muted/50 mt-2 not-prose">
           <p className="text-muted-foreground italic">
             "{data.bestComment.text}"
           </p>
           <p className="text-xs text-right pt-1 text-muted-foreground/80 flex items-center justify-end">
-            <span>{data.bestComment.user || "[deleted]"}</span>
+            {data.bestComment?.user && data.bestComment.user !== "[deleted]" ? (
+              <a
+                href={`https://www.reddit.com/user/${data.bestComment.user.replace(
+                  "u/",
+                  ""
+                )}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline hover:text-primary"
+              >
+                {data.bestComment.user}
+              </a>
+            ) : (
+              <span>{data.bestComment?.user || "[deleted]"}</span> // Fallback
+            )}
             <span className="mx-1">|</span>
             <ArrowBigUp className="h-3.5 w-3.5 mr-0.5" />
             <span>{data.bestComment.votes ?? "N/A"}</span>
