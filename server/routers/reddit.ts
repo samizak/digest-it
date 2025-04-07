@@ -209,6 +209,8 @@ export const redditRouter = router({
         `Backend: Extracted ${extractedLinks.length} links from post body.`
       );
 
+      console.log("Backend: extractedLinks", extractedLinks);
+
       // Enhance the response with extracted (and validated) stats if missing
       if (!summaryJson.stats || Object.keys(summaryJson.stats).length === 0) {
         console.log(
