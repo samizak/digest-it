@@ -1,7 +1,27 @@
 import { LinkData } from "@/lib/types/summaryTypes";
 
 /**
- * Extracts HTTP/HTTPS links from a given text, attempting to find context.
+ * Truncates a URL string for display.
+ * Removes protocol, www, and limits length.
+ */
+function truncateUrlForDisplay(url: string, maxLength = 50): string {
+  try {
+    let displayUrl = url.replace(/^https?:\/\/(?:www\.)?/, ""); // Remove protocol and www.
+    if (displayUrl.length > maxLength) {
+      displayUrl = displayUrl.substring(0, maxLength - 3) + "...";
+    }
+    return displayUrl;
+  } catch (e) {
+    // Fallback in case of unexpected URL format
+    return url.length > maxLength
+      ? url.substring(0, maxLength - 3) + "..."
+      : url;
+  }
+}
+
+/**
+ * Extracts HTTP/HTTPS links from a given text, attempting to find context
+ * and using truncated URLs for standalone links.
  * @param text - The text to search for links.
  * @returns An array of unique LinkData objects.
  */
@@ -14,40 +34,50 @@ export function extractLinksFromText(text: string): LinkData[] {
   const linksMap = new Map<string, LinkData>();
 
   // Regex 1: Find Markdown links like [link text](url)
-  const markdownRegex = /\[([^\]]+)\]\(\s*(https?:\/\/[^\s\)])+\s*\)/g;
+  const markdownRegex = /\[([^\]]+)\]\(\s*(https?:\/\/[^\s\)]+)\s*\)/g;
   let mdMatch;
   while ((mdMatch = markdownRegex.exec(text)) !== null) {
     const linkText = mdMatch[1].trim();
-    const url = mdMatch[2].trim();
+    let url = mdMatch[2].trim();
     if (url && linkText) {
-      // Add/update the entry with the specific text from Markdown
+      // Clean trailing punctuation from URL captured within markdown too
+      url = url.replace(/[.,;:)\]}'\"]+$/, "");
       linksMap.set(url, { url, text: linkText });
     }
   }
 
   // Regex 2: Find standalone URLs (http/https)
-  // Improved regex to better handle valid URL characters and avoid trailing punctuation
   const standaloneUrlRegex =
     /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
   let urlMatch;
   while ((urlMatch = standaloneUrlRegex.exec(text)) !== null) {
-    const url = urlMatch[0];
-    // Only add if it wasn't already found as part of a Markdown link
+    let url = urlMatch[0];
+
+    // Clean trailing punctuation before checking map
+    url = url.replace(/[.,;:)\]}'\"]+$/, "");
+
+    // Only add if this cleaned URL wasn't already found (likely via Markdown)
     if (url && !linksMap.has(url)) {
-      try {
-        // Use the domain name as default text, removing www.
-        const domain = new URL(url).hostname.replace(/^www\./, "");
-        linksMap.set(url, { url, text: domain });
-      } catch (e) {
-        // Fallback for potential invalid URLs caught by regex (less likely now)
-        console.warn(
-          `Regex matched potentially invalid standalone URL: ${url}`
-        );
-        linksMap.set(url, { url, text: url }); // Use URL itself as text
-      }
+      // Use the truncated *cleaned* URL as the link text
+      const truncatedText = truncateUrlForDisplay(url);
+      linksMap.set(url, { url, text: truncatedText });
     }
   }
 
-  // Convert the map values back to an array
+  // --- Filtering Step ---
+  const urls = Array.from(linksMap.keys());
+  urls.forEach((url1) => {
+    // Check if url1 is a prefix of any *other* longer URL in the list
+    const isPrefix = urls.some(
+      (url2) => url2 !== url1 && url2.startsWith(url1)
+    );
+    if (isPrefix) {
+      // If url1 is a prefix of another URL, remove it
+      linksMap.delete(url1);
+      console.log(`Filtering out prefix URL: ${url1}`); // Log filtering
+    }
+  });
+
+  // Convert the filtered map values back to an array
   return Array.from(linksMap.values());
 }
