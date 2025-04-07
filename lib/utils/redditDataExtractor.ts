@@ -1,48 +1,58 @@
+import {
+  ParsedRedditApiResponse,
+  ParsedRedditPostData,
+} from "@/lib/types/redditApiTypes";
+
 /**
- * Utility functions for extracting data from Reddit JSON responses
+ * Utility functions for extracting data from VALIDATED Reddit JSON responses
  */
 
-export function extractOP(data: any): string {
-  try {
-    return data[0]?.data?.children[0]?.data?.author || "Unknown";
-  } catch (e) {
-    return "Unknown";
-  }
+// Helper to get the post data (assumes validation already happened)
+const getPostData = (
+  validatedData: ParsedRedditApiResponse
+): ParsedRedditPostData | undefined => {
+  return validatedData[0]?.data?.children?.[0]?.data;
+};
+
+export function extractOP(validatedData: ParsedRedditApiResponse): string {
+  // Schema default handles 'Unknown'
+  return getPostData(validatedData)?.author ?? "Unknown";
 }
 
-export function extractSubreddit(data: any): string {
-  try {
-    return data[0]?.data?.children[0]?.data?.subreddit_name_prefixed || 
-           "r/" + (data[0]?.data?.children[0]?.data?.subreddit || "Unknown");
-  } catch (e) {
-    return "Unknown";
-  }
+export function extractSubreddit(
+  validatedData: ParsedRedditApiResponse
+): string {
+  const postData = getPostData(validatedData);
+  if (!postData) return "Unknown";
+  // Prefer prefixed name, fallback to regular name, then schema default
+  return (
+    postData.subreddit_name_prefixed || `r/${postData.subreddit}` || "Unknown"
+  );
 }
 
-export function extractCommentCount(data: any): number {
-  try {
-    return data[0]?.data?.children[0]?.data?.num_comments || 0;
-  } catch (e) {
-    return 0;
-  }
+export function extractCommentCount(
+  validatedData: ParsedRedditApiResponse
+): number {
+  // Schema default handles 0
+  return getPostData(validatedData)?.num_comments ?? 0;
 }
 
-export function extractCreatedDate(data: any): string {
-  try {
-    const timestamp = data[0]?.data?.children[0]?.data?.created_utc;
-    if (timestamp) {
+export function extractCreatedDate(
+  validatedData: ParsedRedditApiResponse
+): string {
+  const timestamp = getPostData(validatedData)?.created_utc;
+  if (timestamp) {
+    try {
       return new Date(timestamp * 1000).toISOString();
+    } catch (e) {
+      console.error("Error converting timestamp to Date:", e);
+      return "Invalid Date";
     }
-    return "Unknown";
-  } catch (e) {
-    return "Unknown";
   }
+  return "Unknown"; // Handle case where timestamp is missing even after validation (though schema makes it optional)
 }
 
-export function extractUpvotes(data: any): string {
-  try {
-    return data[0]?.data?.children[0]?.data?.score?.toString() || "0";
-  } catch (e) {
-    return "0";
-  }
+export function extractUpvotes(validatedData: ParsedRedditApiResponse): string {
+  // Schema default handles 0, convert to string
+  return (getPostData(validatedData)?.score ?? 0).toString();
 }

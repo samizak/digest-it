@@ -5,7 +5,6 @@ import SimpleHeader from "@/components/SimpleHeader";
 import { Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { SummaryData, SummaryDataKey } from "@/lib/types/summaryTypes";
-import { isValidRedditThreadUrl } from "@/lib/utils/redditUtils";
 import SummaryForm from "@/components/summary/SummaryForm";
 import SummaryCard from "@/components/summary/SummaryCard";
 import { renderChunk } from "@/components/summary/SummaryChunks";
@@ -27,8 +26,7 @@ export default function SummaryPage() {
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
 
-  const getRedditJsonMutation = trpc.reddit.getRedditJson.useMutation();
-  const summarizeMutation = trpc.reddit.summarize.useMutation();
+  const getSummaryMutation = trpc.reddit.getSummaryFromUrl.useMutation();
 
   useEffect(() => {
     return () => {
@@ -65,6 +63,7 @@ export default function SummaryPage() {
   }, [summaryData]);
 
   const handleSummarize = async (redditUrl: string) => {
+    console.log(`Frontend: handleSummarize called with URL: '${redditUrl}'`);
     setError(null);
     setSubmittedUrl(null);
     setSummaryData(null);
@@ -73,34 +72,23 @@ export default function SummaryPage() {
     timeoutsRef.current = [];
     setIsLoading(true);
 
-    if (!isValidRedditThreadUrl(redditUrl)) {
-      setError(
-        "Please paste a valid Reddit thread URL (e.g., www.reddit.com/r/subreddit/comments/...)"
-      );
-      setIsLoading(false);
-      return;
-    }
-
     setSubmittedUrl(redditUrl);
 
     try {
-      const result = await getRedditJsonMutation.mutateAsync({ redditUrl });
-      const redditData = result;
-      const summaryResult = await summarizeMutation.mutateAsync({
-        redditUrl,
-        redditData,
-      });
+      const summaryResult = await getSummaryMutation.mutateAsync({ redditUrl });
 
+      console.log("Frontend: Received summary data:", summaryResult);
       setSummaryData(summaryResult);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Frontend: Caught error object:", err);
-      console.error("Frontend: Error in summarize process:", err);
       const errorMessage =
-        err instanceof Error ? err.message : "An unknown error occurred";
+        err?.message ||
+        (err instanceof Error ? err.message : "An unknown error occurred");
       setError(errorMessage);
-      setIsLoading(false);
       setSubmittedUrl(null);
       setSummaryData(null);
+    } finally {
+      setIsLoading(false);
     }
   };
 
