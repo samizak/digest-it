@@ -4,7 +4,11 @@ import { useState, useEffect, useRef } from "react";
 import SimpleHeader from "@/components/SimpleHeader";
 import { Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { SummaryData, SummaryDataKey } from "@/lib/types/summaryTypes";
+import {
+  SummaryData,
+  SummaryDataKey,
+  TopCommentData,
+} from "@/lib/types/summaryTypes";
 import SummaryForm from "@/components/summary/SummaryForm";
 import SummaryCard from "@/components/summary/SummaryCard";
 import { renderChunk } from "@/components/summary/SummaryChunks";
@@ -14,6 +18,7 @@ const sectionOrder: SummaryDataKey[] = [
   "stats",
   "keyPoints",
   "topComment",
+  "bestComment",
   "sentiment",
   "links",
 ];
@@ -47,11 +52,28 @@ export default function SummaryPage() {
 
       sectionOrder.forEach((sectionKey) => {
         const sectionData = summaryData[sectionKey];
-        // Check if data exists and is not an empty array
-        if (
-          sectionData &&
-          !(Array.isArray(sectionData) && sectionData.length === 0)
-        ) {
+
+        // Check if the section should be revealed
+        let shouldReveal = false;
+        if (sectionData) {
+          if (Array.isArray(sectionData)) {
+            shouldReveal = sectionData.length > 0;
+          } else if (
+            sectionKey === "topComment" ||
+            sectionKey === "bestComment"
+          ) {
+            // For comment sections, check if the object exists AND has text
+            shouldReveal =
+              typeof sectionData === "object" &&
+              sectionData !== null &&
+              !!(sectionData as TopCommentData).text;
+          } else {
+            // For other non-array sections (quickGlance, stats, sentiment)
+            shouldReveal = true; // Assume they should be shown if data exists
+          }
+        }
+
+        if (shouldReveal) {
           const timeoutId = setTimeout(() => {
             setRevealedSections((prev) => [...prev, sectionKey]);
           }, delay);

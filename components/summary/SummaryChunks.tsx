@@ -103,7 +103,37 @@ export const summaryChunks = [
       </div>
     </AnimatedChunk>
   ),
-  // Chunk 4: Sentiment Analysis
+  // Chunk 4: Best Comment (New Chunk)
+  (key: Key, data: SummaryData) => (
+    <AnimatedChunk key={key} delay={0.1}>
+      {/* Main Heading */}
+      <h2 className="text-xl font-semibold pt-4 not-prose flex items-center gap-2">
+        <span role="img" aria-label="star">
+          ⭐
+        </span>
+        <span>Best Comment</span>
+      </h2>
+      {/* Comment Box - Reusing Top Comment styling */}
+      {data.bestComment?.text ? (
+        <div className="border rounded p-3 bg-muted/50 mt-2 not-prose">
+          <p className="text-muted-foreground italic">
+            "{data.bestComment.text}"
+          </p>
+          <p className="text-xs text-right pt-1 text-muted-foreground/80 flex items-center justify-end">
+            <span>{data.bestComment.user || "[deleted]"}</span>
+            <span className="mx-1">|</span>
+            <ArrowBigUp className="h-3.5 w-3.5 mr-0.5" />
+            <span>{data.bestComment.votes ?? "N/A"}</span>
+          </p>
+        </div>
+      ) : (
+        <p className="text-muted-foreground text-sm mt-2">
+          Best comment data not available.
+        </p>
+      )}
+    </AnimatedChunk>
+  ),
+  // Chunk 5: Sentiment Analysis
   (key: Key, data: SummaryData) => (
     <AnimatedChunk key={key} delay={0.1}>
       <h2 className="text-xl font-semibold pt-4 not-prose">
@@ -115,7 +145,7 @@ export const summaryChunks = [
       <p className="text-muted-foreground">{data.sentiment}</p>
     </AnimatedChunk>
   ),
-  // Chunk 5: Links and Resources
+  // Chunk 6: Links and Resources
   (key: Key, data: SummaryData) => (
     <AnimatedChunk key={key} delay={0.1}>
       <h2 className="text-xl font-semibold pt-4 not-prose">
@@ -159,10 +189,12 @@ export const renderChunk = (
       return summaryChunks[2](index, data);
     case "topComment":
       return summaryChunks[3](index, data);
-    case "sentiment":
+    case "bestComment":
       return summaryChunks[4](index, data);
-    case "links":
+    case "sentiment":
       return summaryChunks[5](index, data);
+    case "links":
+      return summaryChunks[6](index, data);
     default:
       return null;
   }
