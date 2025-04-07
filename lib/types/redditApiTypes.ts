@@ -23,6 +23,9 @@ const RedditPostDataSchema = z.object({
   num_comments: z.number().int().nonnegative().optional().default(0),
   created_utc: z.number().positive().optional(),
   score: z.number().int().optional().default(0),
+  selftext: z.string().optional().default(""), // <-- Add selftext for post body
+  title: z.string().optional().default(""), // Might be useful context later
+  url: z.string().url().optional(), // The main link of the post (if it's a link post)
 });
 
 // Schema for a child element in the listing (which contains the post data)

@@ -52,16 +52,7 @@ Raw JSON data retrieved from the Reddit API for a specific thread. This data typ
     "user": "string", // Username of the commenter.
     "votes": "number" // Score of the comment.
   },
-  "sentiment": "string", // Brief analysis (1 sentence) of the overall sentiment/tone of the discussion (e.g., "Largely positive with helpful suggestions.", "Mixed debate with strong opposing views.", "Neutral and informative."). Analyze OP and comment reception.
-  "links": [
-    // Array of objects for relevant external links shared.
-    {
-      // Include links shared in the OP's selftext or comment bodies. Exclude internal reddit links unless they are highly relevant cross-posts.
-      "text": "string", // A brief description or title for the link (if context available, otherwise use the domain or a snippet).
-      "url": "string" // The actual URL.
-    }
-    // ... more link objects if found ...
-  ]
+  "sentiment": "string" // Brief analysis (1 sentence) of the overall sentiment/tone of the discussion (e.g., "Largely positive with helpful suggestions.", "Mixed debate with strong opposing views.", "Neutral and informative."). Analyze OP and comment reception.
 }
 ```
 
@@ -74,8 +65,7 @@ Raw JSON data retrieved from the Reddit API for a specific thread. This data typ
 5.  **`topComment`:** Iterate through the _top-level_ comments. Find the comment with the highest score (`ups` or `score` field) that is relevant to the discussion and provides substance (ignore simple jokes or trivial replies unless they are exceptionally highly voted _and_ relevant). Extract its body text, author username, and score. If the chosen comment text is extremely long (e.g., >1000 characters), summarize its core message concisely; otherwise, use the original text.
 6.  **`bestComment`:** Choose the highest voted comment that isn't the topComment if possible, otherwise pick the top one again.
 7.  **`sentiment`:** Assess the overall tone. Consider the post's reception (score/ratio if available), the nature of the comments (supportive, critical, debating, helpful), and the language used. Summarize the prevailing sentiment in one sentence. Use terms like "Positive", "Negative", "Mixed", "Neutral", "Debate", "Supportive", "Critical", "Informative", etc.
-8.  **`links`:** Scan the OP's selftext and the body text of all comments for external URLs (http:// or https://). Exclude links back to reddit.com unless clearly relevant (like a source thread). For each valid external link found, create an object with the `url` and a short `text` description (e.g., "Example Domain Article", or use the URL domain if no other context is obvious). Populate the array. If no external links are found, return an empty array `[]`.
-9.  **JSON Validity:** Ensure the final output is perfectly valid JSON, paying attention to quotes, commas, brackets, and braces.
+8.  **JSON Validity:** Ensure the final output is perfectly valid JSON, paying attention to quotes, commas, brackets, and braces.
 
 ## Input Data:
 

@@ -13,6 +13,7 @@ import {
   extractUpvotes,
 } from "@/lib/utils/redditDataExtractor";
 import { generateSummary } from "@/lib/services/geminiService";
+import { extractLinksFromText } from "@/lib/utils/linkExtractor";
 
 export const redditRouter = router({
   getSummaryFromUrl: publicProcedure
@@ -129,6 +130,10 @@ export const redditRouter = router({
       let llmResponseString: string;
       try {
         llmResponseString = await generateSummary(finalPrompt);
+        console.log(
+          "Backend: Received raw LLM response string:\n",
+          llmResponseString
+        );
         console.log("Backend: Received LLM response.");
       } catch (error) {
         console.error("Backend: Error calling LLM service:", error);
@@ -179,6 +184,30 @@ export const redditRouter = router({
             "Failed to parse the summary structure from the LLM response.",
         });
       }
+
+      // --- 6. Extract Links from Post Body ---
+      const postData = validatedRedditData[0]?.data?.children?.[0]?.data;
+      const postSelfText = postData?.selftext || "";
+      const postMainLink = postData?.url || null;
+      let extractedLinks = extractLinksFromText(postSelfText);
+
+      // If the post itself is a link post and the URL isn't already in selftext links, add it.
+      if (
+        postMainLink &&
+        postMainLink !== input.redditUrl &&
+        !extractedLinks.some((link) => link.url === postMainLink)
+      ) {
+        // Attempt to use the post title as the link text
+        const linkText =
+          postData?.title || postMainLink.split("/")[2] || postMainLink;
+        extractedLinks.unshift({ url: postMainLink, text: linkText }); // Add to beginning
+      }
+
+      // Add extracted links to the summary object
+      summaryJson.links = extractedLinks;
+      console.log(
+        `Backend: Extracted ${extractedLinks.length} links from post body.`
+      );
 
       // Enhance the response with extracted (and validated) stats if missing
       if (!summaryJson.stats || Object.keys(summaryJson.stats).length === 0) {
