@@ -27,12 +27,7 @@ export default function SummaryPage() {
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
 
-  // Add tRPC hooks
-  const getRedditJson = trpc.reddit.getRedditJson.useQuery(
-    { redditUrl: submittedUrl || "" },
-    { enabled: false }
-  );
-
+  const getRedditJsonMutation = trpc.reddit.getRedditJson.useMutation();
   const summarizeMutation = trpc.reddit.summarize.useMutation();
 
   useEffect(() => {
@@ -89,24 +84,16 @@ export default function SummaryPage() {
     setSubmittedUrl(redditUrl);
 
     try {
-      // Use tRPC to fetch Reddit JSON data
-      const result = await getRedditJson.refetch();
-      if (result.error) {
-        throw new Error(result.error.message);
-      }
-
-      const redditData = result.data;
-      console.log("Frontend: Received Reddit JSON data");
-
-      // Use tRPC to get the summary
+      const result = await getRedditJsonMutation.mutateAsync({ redditUrl });
+      const redditData = result;
       const summaryResult = await summarizeMutation.mutateAsync({
         redditUrl,
         redditData,
       });
 
-      console.log("Frontend: Received summary data:", summaryResult);
       setSummaryData(summaryResult);
     } catch (err) {
+      console.error("Frontend: Caught error object:", err);
       console.error("Frontend: Error in summarize process:", err);
       const errorMessage =
         err instanceof Error ? err.message : "An unknown error occurred";
