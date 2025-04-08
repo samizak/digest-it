@@ -153,76 +153,85 @@ function SummaryPageContent() {
   );
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">DigestIt</h1>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setIsHistoryPanelOpen(true)}
-          aria-label="View History"
+    <div className="flex flex-col min-h-screen justify-center items-center px-4 py-8">
+      <div className="container max-w-3xl">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold tracking-tight text-center flex-grow">
+            Reddit Thread Summarizer
+          </h1>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setIsHistoryPanelOpen(true)}
+            aria-label="View History"
+            className="ml-4"
+          >
+            <History className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <p className="text-muted-foreground text-center mb-6">
+          Paste the URL of a Reddit thread below to get a quick summary.
+        </p>
+
+        <form
+          onSubmit={form.handleSubmit(handleSubmit)}
+          className="flex gap-2 mb-6"
         >
-          <History className="h-5 w-5" />
-        </Button>
+          <Input
+            {...form.register("url")}
+            placeholder="Paste Reddit thread URL (e.g., reddit.com/r/.../comments/...)"
+            className="flex-grow"
+            disabled={getSummaryMutation.isPending}
+          />
+          <Button
+            type="submit"
+            disabled={getSummaryMutation.isPending || !form.formState.isValid}
+          >
+            {getSummaryMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            {getSummaryMutation.isPending ? "Summarizing..." : "Summarize"}
+          </Button>
+        </form>
+
+        {form.formState.errors.url && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Invalid URL</AlertTitle>
+            <AlertDescription>
+              {form.formState.errors.url.message}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {getSummaryMutation.error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>
+              {getSummaryMutation.error.message ||
+                "An unknown error occurred while fetching the summary."}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {(getSummaryMutation.isPending || currentSummaryData) && (
+          <SummaryCard
+            summaryData={currentSummaryData!}
+            submittedUrl={submittedUrl}
+            isLoading={getSummaryMutation.isPending}
+            revealedSections={revealedSections}
+            sectionOrder={sectionOrder}
+            renderChunk={renderChunk}
+          />
+        )}
+
+        <HistoryPanel
+          isOpen={isHistoryPanelOpen}
+          onOpenChange={setIsHistoryPanelOpen}
+        />
       </div>
-
-      <form
-        onSubmit={form.handleSubmit(handleSubmit)}
-        className="flex gap-2 mb-6"
-      >
-        <Input
-          {...form.register("url")}
-          placeholder="Paste Reddit thread URL (e.g., reddit.com/r/.../comments/...)"
-          className="flex-grow"
-          disabled={getSummaryMutation.isPending}
-        />
-        <Button
-          type="submit"
-          disabled={getSummaryMutation.isPending || !form.formState.isValid}
-        >
-          {getSummaryMutation.isPending ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : null}
-          {getSummaryMutation.isPending ? "Summarizing..." : "Summarize"}
-        </Button>
-      </form>
-
-      {form.formState.errors.url && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Invalid URL</AlertTitle>
-          <AlertDescription>
-            {form.formState.errors.url.message}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {getSummaryMutation.error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            {getSummaryMutation.error.message ||
-              "An unknown error occurred while fetching the summary."}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {(getSummaryMutation.isPending || currentSummaryData) && (
-        <SummaryCard
-          summaryData={currentSummaryData!}
-          submittedUrl={submittedUrl}
-          isLoading={getSummaryMutation.isPending}
-          revealedSections={revealedSections}
-          sectionOrder={sectionOrder}
-          renderChunk={renderChunk}
-        />
-      )}
-
-      <HistoryPanel
-        isOpen={isHistoryPanelOpen}
-        onOpenChange={setIsHistoryPanelOpen}
-      />
     </div>
   );
 }
