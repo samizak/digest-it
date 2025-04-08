@@ -16,6 +16,7 @@ import SummaryCard from "@/components/summary/SummaryCard";
 import { HistoryProvider, useHistory } from "@/contexts/HistoryContext";
 import HistoryPanel from "@/components/history/HistoryPanel";
 import { HistoryEntry } from "@/lib/types/historyTypes";
+import SimpleHeader from "@/components/SimpleHeader";
 
 const summarySchema = z.object({
   url: z.string().url({ message: "Please enter a valid URL." }),
@@ -62,6 +63,7 @@ function SummaryPageContent() {
       selectHistoryEntry(null);
       handleSubmit({ url });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, form.setValue]);
 
   useEffect(() => {
@@ -73,6 +75,7 @@ function SummaryPageContent() {
       getSummaryMutation.reset();
       selectHistoryEntry(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlFromParams]);
 
   useEffect(() => {
@@ -153,18 +156,14 @@ function SummaryPageContent() {
   );
 
   return (
-    <div className="flex flex-col min-h-screen justify-center items-center px-4 py-8">
+    <div className="flex flex-col min-h-screen items-center px-4 py-8">
       <div className="container max-w-3xl">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold tracking-tight text-center flex-grow">
-            Reddit Thread Summarizer
-          </h1>
+        <div className="flex justify-end mb-4">
           <Button
             variant="outline"
             size="icon"
             onClick={() => setIsHistoryPanelOpen(true)}
             aria-label="View History"
-            className="ml-4"
           >
             <History className="h-5 w-5" />
           </Button>
@@ -239,6 +238,7 @@ function SummaryPageContent() {
 export default function SummaryPage() {
   return (
     <HistoryProvider>
+      <SimpleHeader />
       <SummaryPageContent />
     </HistoryProvider>
   );
