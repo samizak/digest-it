@@ -119,7 +119,7 @@ function SummaryPageContent() {
       form.setValue("url", selectedEntry.url);
       getSummaryMutation.reset();
     }
-  }, [selectedEntry, form, getSummaryMutation]);
+  }, [selectedEntry]);
 
   const handleSubmit = useCallback(
     async (values: SummaryFormValues) => {
