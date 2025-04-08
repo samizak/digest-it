@@ -104,6 +104,15 @@ export function extractLinksFromText(text: string): LinkData[] {
         } catch (e) {
           linkText = "Reddit Media Link (Err)"; // Fallback
         }
+      }
+      // Handle Reddit video links
+      else if (/\/\/v\.redd\.it\//.test(url)) {
+        linkText = "Reddit Video";
+      }
+      // Handle Reddit image links
+      else if (/\/\/i\.redd\.it\//.test(url)) {
+        const filename = getFilenameFromUrl(url);
+        linkText = filename ? `Reddit Image: ${filename}` : "Reddit Image";
       } else {
         // Default: Use the truncated URL path as the link text
         linkText = truncateUrlForDisplay(url);

@@ -102,7 +102,68 @@ export const redditRouter = router({
       const validatedRedditData = validationResult.data; // Now fully typed!
       console.log("Backend: Reddit data validation successful.");
 
-      // --- 3. Generate Summarization Prompt ---
+      // --- 3. Extract Links from Post Body (Moved Up) ---
+      const postData = validatedRedditData[0]?.data?.children?.[0]?.data;
+      const postSelfText = postData?.selftext || "";
+      const postMainLink = postData?.url || null;
+      let extractedLinks = extractLinksFromText(postSelfText);
+
+      // If the post itself is a link post and the URL isn't already in selftext links, add it.
+      if (
+        postMainLink &&
+        postMainLink !== input.redditUrl &&
+        !extractedLinks.some((link) => link.url === postMainLink)
+      ) {
+        // Attempt to use the post title as the link text
+        const linkText =
+          postData?.title || postMainLink.split("/")[2] || postMainLink;
+        extractedLinks.unshift({ url: postMainLink, text: linkText }); // Add to beginning
+      }
+
+      // Extract gallery images if present
+      if (
+        postData?.is_gallery &&
+        postData.gallery_data &&
+        postData.media_metadata
+      ) {
+        console.log(
+          "Backend: Detected Reddit gallery post, extracting images..."
+        );
+        const galleryItems = postData.gallery_data.items;
+        let galleryCount = 0;
+
+        galleryItems.forEach((item) => {
+          const mediaId = item.media_id;
+          const metadata = postData.media_metadata?.[mediaId];
+
+          if (metadata && metadata.s && metadata.s.u) {
+            // Get the full-size image URL
+            let imageUrl = metadata.s.u;
+            // Reddit URLs often have amp; in them which needs to be decoded
+            imageUrl = imageUrl.replace(/&amp;/g, "&");
+
+            galleryCount++;
+            const imageText = `${
+              postData.title || "Gallery"
+            } - Image ${galleryCount}`;
+
+            extractedLinks.push({
+              url: imageUrl,
+              text: imageText,
+            });
+          }
+        });
+
+        console.log(`Backend: Extracted ${galleryCount} gallery images`);
+      }
+
+      console.log(
+        `Backend: Extracted ${extractedLinks.length} links from post body.`
+      );
+
+      // --- 4. Generate Summarization Prompt ---
+      // Commenting out prompt generation as we're bypassing Gemini
+      /*
       const promptFilePath = path.join(
         process.cwd(),
         "lib",
@@ -124,9 +185,14 @@ export const redditRouter = router({
         "[INSERT REDDIT THREAD JSON DATA HERE]",
         redditDataString
       );
+      */
 
-      // --- 4. Call LLM Service ---
-      console.log("Backend: Calling LLM service...");
+      // --- 5. Call LLM Service --- (DISABLED)
+      console.log(
+        "Backend: BYPASSING LLM Service (template data will be used)"
+      );
+
+      /*
       let llmResponseString: string;
       try {
         llmResponseString = await generateSummary(finalPrompt);
@@ -151,8 +217,49 @@ export const redditRouter = router({
           message: "Failed to generate summary due to an LLM service error.",
         });
       }
+      */
 
-      // --- 5. Parse LLM Response & Enhance ---
+      // --- 5. Create Template Summary Data ---
+      console.log("Backend: Creating template summary data");
+
+      // Extract useful stats now for the template
+      const op = extractOP(validatedRedditData);
+      const subreddit = extractSubreddit(validatedRedditData);
+      const commentCount = extractCommentCount(validatedRedditData);
+      const created = extractCreatedDate(validatedRedditData);
+      const upvotes = extractUpvotes(validatedRedditData);
+
+      // Create template summary JSON
+      let summaryJson: Partial<SummaryData> = {
+        quickGlance:
+          "This is template data while testing link extraction functionality.",
+        stats: {
+          op,
+          subreddit,
+          created,
+          upvotes,
+          comments: commentCount,
+        },
+        keyPoints: [
+          "This is a template key point 1 for testing.",
+          "This is a template key point 2 for testing.",
+          "This is a template key point 3 for testing.",
+        ],
+        topComment: {
+          text: "This is a template top comment for testing purposes.",
+          user: "template_user",
+          votes: 100,
+        },
+        bestComment: {
+          text: "This is a template best comment for testing purposes.",
+          user: "template_user2",
+          votes: 75,
+        },
+        sentiment: "Template sentiment analysis: neutral",
+      };
+
+      // Skip LLM Response parsing since we're using template data
+      /*
       console.log("Backend: Parsing LLM response...");
       let summaryJson: Partial<SummaryData>; // Use Partial initially
       try {
@@ -184,33 +291,17 @@ export const redditRouter = router({
             "Failed to parse the summary structure from the LLM response.",
         });
       }
-
-      // --- 6. Extract Links from Post Body ---
-      const postData = validatedRedditData[0]?.data?.children?.[0]?.data;
-      const postSelfText = postData?.selftext || "";
-      const postMainLink = postData?.url || null;
-      let extractedLinks = extractLinksFromText(postSelfText);
-
-      // If the post itself is a link post and the URL isn't already in selftext links, add it.
-      if (
-        postMainLink &&
-        postMainLink !== input.redditUrl &&
-        !extractedLinks.some((link) => link.url === postMainLink)
-      ) {
-        // Attempt to use the post title as the link text
-        const linkText =
-          postData?.title || postMainLink.split("/")[2] || postMainLink;
-        extractedLinks.unshift({ url: postMainLink, text: linkText }); // Add to beginning
-      }
+      */
 
       // Add extracted links to the summary object
       summaryJson.links = extractedLinks;
       console.log(
-        `Backend: Extracted ${extractedLinks.length} links from post body.`
+        "Backend: Added extracted links to template summary data:",
+        extractedLinks
       );
 
-      console.log("Backend: extractedLinks", extractedLinks);
-
+      // We're using template data so no need to enhance with stats (already included)
+      /*
       // Enhance the response with extracted (and validated) stats if missing
       if (!summaryJson.stats || Object.keys(summaryJson.stats).length === 0) {
         console.log(
@@ -224,10 +315,9 @@ export const redditRouter = router({
           comments: extractCommentCount(validatedRedditData),
         };
       }
+      */
 
-      console.log("Backend: Summary generation complete.");
-      // We assume the LLM response + enhancement fits the SummaryData structure.
-      // For full safety, we could add another Zod schema for SummaryData and parse here.
+      console.log("Backend: Template summary generation complete.");
       return summaryJson as SummaryData;
     }),
 });

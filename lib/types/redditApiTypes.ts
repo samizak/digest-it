@@ -26,6 +26,42 @@ const RedditPostDataSchema = z.object({
   selftext: z.string().optional().default(""), // <-- Add selftext for post body
   title: z.string().optional().default(""), // Might be useful context later
   url: z.string().url().optional(), // The main link of the post (if it's a link post)
+  is_gallery: z.boolean().optional(), // Indicates if post is a gallery
+  gallery_data: z
+    .object({
+      items: z.array(
+        z.object({
+          media_id: z.string(),
+          id: z.number(),
+        })
+      ),
+    })
+    .optional(), // Gallery post data
+  media_metadata: z
+    .record(
+      z.object({
+        status: z.string(),
+        e: z.string().optional(),
+        m: z.string().optional(),
+        p: z
+          .array(
+            z.object({
+              y: z.number(),
+              x: z.number(),
+              u: z.string().url(),
+            })
+          )
+          .optional(),
+        s: z
+          .object({
+            y: z.number(),
+            x: z.number(),
+            u: z.string().url(),
+          })
+          .optional(),
+      })
+    )
+    .optional(), // Media metadata for gallery images
 });
 
 // Schema for a child element in the listing (which contains the post data)

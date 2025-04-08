@@ -182,20 +182,64 @@ export const summaryChunks = [
         </span>{" "}
         Links and Resources
       </h2>
-      <ul className="list-disc list-inside space-y-1 pl-4 text-muted-foreground">
-        {data.links?.map((link, index) => (
-          <li key={index}>
-            <a
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-primary"
-            >
-              {link.text}
-            </a>
-          </li>
-        ))}
-      </ul>
+      <div className="space-y-4">
+        {/* Main links list */}
+        <ul className="list-disc list-inside space-y-1 pl-4 text-muted-foreground">
+          {data.links
+            ?.filter((link) => !link.text.includes(" - Image "))
+            .map((link, index) => (
+              <li key={index}>
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-primary"
+                >
+                  {link.text}
+                </a>
+              </li>
+            ))}
+        </ul>
+
+        {/* Gallery images section */}
+        {data.links?.some((link) => link.text.includes(" - Image ")) && (
+          <div className="mt-4">
+            <h3 className="text-lg font-semibold not-prose">
+              <span role="img" aria-label="camera">
+                📷
+              </span>{" "}
+              Gallery Images
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
+              {data.links
+                .filter((link) => link.text.includes(" - Image "))
+                .map((link, index) => (
+                  <a
+                    key={index}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:opacity-90 transition-opacity"
+                  >
+                    <div className="relative pt-[100%] bg-muted rounded overflow-hidden">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <img
+                          src={link.url}
+                          alt={link.text}
+                          className="object-cover w-full h-full"
+                          loading="lazy"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 truncate text-center">
+                      {link.text}
+                    </p>
+                  </a>
+                ))}
+            </div>
+          </div>
+        )}
+      </div>
     </AnimatedChunk>
   ),
 ];
