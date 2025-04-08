@@ -62,6 +62,31 @@ const RedditPostDataSchema = z.object({
       })
     )
     .optional(), // Media metadata for gallery images
+
+  // Add media for potential video
+  media: z
+    .object({
+      reddit_video: z
+        .object({
+          fallback_url: z.string().url(),
+          // Add other video properties if needed (height, width, duration, is_gif)
+        })
+        .optional(),
+    })
+    .nullable()
+    .optional(), // Can be null
+
+  // Add secure_media for potential video (often redundant but good to check)
+  secure_media: z
+    .object({
+      reddit_video: z
+        .object({
+          fallback_url: z.string().url(),
+        })
+        .optional(),
+    })
+    .nullable()
+    .optional(), // Can be null
 });
 
 // Schema for a child element in the listing (which contains the post data)

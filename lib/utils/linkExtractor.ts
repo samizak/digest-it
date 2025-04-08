@@ -70,6 +70,8 @@ export function extractLinksFromText(text: string): LinkData[] {
     }
   }
 
+  console.log("Backend: Extracted links from markdown:", linksMap);
+
   // --- Pass 2: Standalone URLs ---
   const standaloneUrlRegex =
     /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
@@ -78,10 +80,13 @@ export function extractLinksFromText(text: string): LinkData[] {
     let url = urlMatch[0];
     url = cleanUrlString(url);
 
-    // *** Skip inner Reddit preview/image URLs when found standalone ***
+    // Reinstate skipping for Reddit preview/image URLs found standalone
+    // Let the router handle these via media_metadata for better text and de-duplication
     if (/\/\/(preview|i)\.redd\.it\//.test(url)) {
-      console.log(`Skipping inner Reddit URL: ${url}`);
-      continue;
+      console.log(
+        `LinkExtractor: Skipping standalone Reddit image/preview URL: ${url}`
+      );
+      continue; // Skip adding this link here
     }
 
     // Only add if this cleaned URL wasn't already found (likely via Markdown)

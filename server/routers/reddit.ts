@@ -108,57 +108,78 @@ export const redditRouter = router({
       const postMainLink = postData?.url || null;
       let extractedLinks = extractLinksFromText(postSelfText);
 
-      // If the post itself is a link post and the URL isn't already in selftext links, add it.
+      // Use a Set to keep track of URLs added to avoid duplicates
+      const addedUrls = new Set<string>(extractedLinks.map((link) => link.url));
+
+      // Helper function to add a link if the URL is unique
+      const addUniqueLink = (url: string, text: string) => {
+        const cleanedUrl = url.replace(/&amp;/g, "&"); // Decode entities
+        if (!addedUrls.has(cleanedUrl)) {
+          extractedLinks.push({ url: cleanedUrl, text });
+          addedUrls.add(cleanedUrl);
+          return true;
+        }
+        return false;
+      };
+
+      // Add the main post link if it's unique and not the same as the submitted URL
       if (
         postMainLink &&
         postMainLink !== input.redditUrl &&
-        !extractedLinks.some((link) => link.url === postMainLink)
+        !addedUrls.has(postMainLink)
       ) {
-        // Attempt to use the post title as the link text
         const linkText =
           postData?.title || postMainLink.split("/")[2] || postMainLink;
-        extractedLinks.unshift({ url: postMainLink, text: linkText }); // Add to beginning
+        // Try adding - unshift puts it at the front if added
+        if (addUniqueLink(postMainLink, linkText)) {
+          const addedLink = extractedLinks.pop(); // Remove from end
+          if (addedLink) extractedLinks.unshift(addedLink); // Add to beginning
+        }
       }
 
-      // Extract gallery images if present
-      if (
-        postData?.is_gallery &&
-        postData.gallery_data &&
-        postData.media_metadata
-      ) {
-        console.log(
-          "Backend: Detected Reddit gallery post, extracting images..."
-        );
-        const galleryItems = postData.gallery_data.items;
-        let galleryCount = 0;
+      // --- Extract Media (Images/Videos) from metadata and media objects ---
+      let imageCount = 0;
 
-        galleryItems.forEach((item) => {
-          const mediaId = item.media_id;
-          const metadata = postData.media_metadata?.[mediaId];
-
-          if (metadata && metadata.s && metadata.s.u) {
-            // Get the full-size image URL
-            let imageUrl = metadata.s.u;
-            // Reddit URLs often have amp; in them which needs to be decoded
-            imageUrl = imageUrl.replace(/&amp;/g, "&");
-
-            galleryCount++;
-            const imageText = `${
-              postData.title || "Gallery"
-            } - Image ${galleryCount}`;
-
-            extractedLinks.push({
-              url: imageUrl,
-              text: imageText,
-            });
+      // Extract from media_metadata (handles galleries and single images with metadata)
+      if (postData?.media_metadata) {
+        console.log("Backend: Processing media_metadata...");
+        for (const mediaId in postData.media_metadata) {
+          const metadata = postData.media_metadata[mediaId];
+          // Prefer highest resolution source image 's.u'
+          if (metadata?.s?.u) {
+            imageCount++;
+            const imageText = `${postData.title || "Image"} ${imageCount}`;
+            if (addUniqueLink(metadata.s.u, imageText)) {
+              console.log(
+                `Backend: Added image from metadata: ${metadata.s.u}`
+              );
+            }
           }
-        });
-
-        console.log(`Backend: Extracted ${galleryCount} gallery images`);
+          // Optional: Fallback to preview images 'p' if 's' is missing?
+          // else if (metadata?.p?.length) { ... }
+        }
       }
+
+      // Extract from media/secure_media (handles videos)
+      const videoUrl =
+        postData?.media?.reddit_video?.fallback_url ||
+        postData?.secure_media?.reddit_video?.fallback_url;
+
+      if (videoUrl) {
+        console.log("Backend: Processing media object for video...");
+        const videoText = `${postData?.title || "Video"}`;
+        if (addUniqueLink(videoUrl, videoText)) {
+          console.log(`Backend: Added video: ${videoUrl}`);
+        }
+      }
+
+      // Remove the old gallery-specific extraction block
+      /*
+      if (postData?.is_gallery && ...) { ... }
+      */
 
       console.log(
-        `Backend: Extracted ${extractedLinks.length} links from post body.`
+        `Backend: Final link count after media extraction: ${extractedLinks.length}`
       );
 
       // --- 4. Generate Summarization Prompt ---
