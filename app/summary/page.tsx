@@ -219,9 +219,18 @@ function SummaryPageContent() {
           </Alert>
         )}
 
-        {(getSummaryMutation.isPending || currentSummaryData) && (
+        {/* Show loading indicator only when fetching and no data exists yet */}
+        {getSummaryMutation.isPending && !currentSummaryData && (
+          <div className="flex justify-center items-center pt-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <p className="ml-2 text-muted-foreground">Generating summary...</p>
+          </div>
+        )}
+
+        {/* Only render SummaryCard when data is available */}
+        {currentSummaryData && (
           <SummaryCard
-            summaryData={currentSummaryData!}
+            summaryData={currentSummaryData}
             submittedUrl={submittedUrl}
             isLoading={getSummaryMutation.isPending}
             revealedSections={revealedSections}

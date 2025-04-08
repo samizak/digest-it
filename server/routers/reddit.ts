@@ -162,8 +162,7 @@ export const redditRouter = router({
       );
 
       // --- 4. Generate Summarization Prompt ---
-      // Commenting out prompt generation as we're bypassing Gemini
-      /*
+      // Re-enable prompt generation
       const promptFilePath = path.join(
         process.cwd(),
         "lib",
@@ -185,14 +184,11 @@ export const redditRouter = router({
         "[INSERT REDDIT THREAD JSON DATA HERE]",
         redditDataString
       );
-      */
 
-      // --- 5. Call LLM Service --- (DISABLED)
-      console.log(
-        "Backend: BYPASSING LLM Service (template data will be used)"
-      );
+      // --- 5. Call LLM Service ---
+      // Re-enable LLM call
+      console.log("Backend: Calling LLM Service...");
 
-      /*
       let llmResponseString: string;
       try {
         llmResponseString = await generateSummary(finalPrompt);
@@ -217,49 +213,16 @@ export const redditRouter = router({
           message: "Failed to generate summary due to an LLM service error.",
         });
       }
+
+      // --- 6. Parse LLM Response ---
+      // Remove template data creation block
+      /*
+      console.log("Backend: Creating template summary data");
+      // ... template data ...
+      let summaryJson: Partial<SummaryData> = { ... };
       */
 
-      // --- 5. Create Template Summary Data ---
-      console.log("Backend: Creating template summary data");
-
-      // Extract useful stats now for the template
-      const op = extractOP(validatedRedditData);
-      const subreddit = extractSubreddit(validatedRedditData);
-      const commentCount = extractCommentCount(validatedRedditData);
-      const created = extractCreatedDate(validatedRedditData);
-      const upvotes = extractUpvotes(validatedRedditData);
-
-      // Create template summary JSON
-      let summaryJson: Partial<SummaryData> = {
-        quickGlance:
-          "This is template data while testing link extraction functionality.",
-        stats: {
-          op,
-          subreddit,
-          created,
-          upvotes,
-          comments: commentCount,
-        },
-        keyPoints: [
-          "This is a template key point 1 for testing.",
-          "This is a template key point 2 for testing.",
-          "This is a template key point 3 for testing.",
-        ],
-        topComment: {
-          text: "This is a template top comment for testing purposes.",
-          user: "template_user",
-          votes: 100,
-        },
-        bestComment: {
-          text: "This is a template best comment for testing purposes.",
-          user: "template_user2",
-          votes: 75,
-        },
-        sentiment: "Template sentiment analysis: neutral",
-      };
-
-      // Skip LLM Response parsing since we're using template data
-      /*
+      // Re-enable LLM response parsing
       console.log("Backend: Parsing LLM response...");
       let summaryJson: Partial<SummaryData>; // Use Partial initially
       try {
@@ -271,10 +234,21 @@ export const redditRouter = router({
           jsonStringToParse = match[1].trim();
           console.log("Backend: Extracted JSON using regex.");
         } else {
+          // If no JSON block, try parsing the whole string
+          // Handle potential leading/trailing non-JSON text cautiously
           jsonStringToParse = llmResponseString.trim();
-          console.log(
-            "Backend: No JSON fence found, attempting to parse entire response."
-          );
+          if (
+            jsonStringToParse.startsWith("{") &&
+            jsonStringToParse.endsWith("}")
+          ) {
+            console.log(
+              "Backend: No JSON fence found, attempting to parse entire trimmed response as JSON."
+            );
+          } else {
+            console.warn(
+              "Backend: LLM response does not appear to be JSON. Attempting parse anyway."
+            );
+          }
         }
 
         summaryJson = JSON.parse(jsonStringToParse);
@@ -291,17 +265,16 @@ export const redditRouter = router({
             "Failed to parse the summary structure from the LLM response.",
         });
       }
-      */
 
+      // --- 7. Enhance and Return Summary ---
       // Add extracted links to the summary object
       summaryJson.links = extractedLinks;
       console.log(
-        "Backend: Added extracted links to template summary data:",
+        "Backend: Added extracted links to LLM summary data:",
         extractedLinks
       );
 
-      // We're using template data so no need to enhance with stats (already included)
-      /*
+      // Re-enable stats enhancement if necessary
       // Enhance the response with extracted (and validated) stats if missing
       if (!summaryJson.stats || Object.keys(summaryJson.stats).length === 0) {
         console.log(
@@ -315,9 +288,8 @@ export const redditRouter = router({
           comments: extractCommentCount(validatedRedditData),
         };
       }
-      */
 
-      console.log("Backend: Template summary generation complete.");
+      console.log("Backend: LLM summary generation complete.");
       return summaryJson as SummaryData;
     }),
 });
