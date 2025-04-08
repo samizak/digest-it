@@ -158,12 +158,16 @@ function SummaryPageContent() {
   return (
     <div className="flex flex-col min-h-screen items-center px-4 py-8">
       <div className="container max-w-3xl">
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-center items-center relative mb-6">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Reddit Thread Summarizer
+          </h1>
           <Button
             variant="outline"
             size="icon"
             onClick={() => setIsHistoryPanelOpen(true)}
             aria-label="View History"
+            className="absolute right-0 top-1/2 -translate-y-1/2"
           >
             <History className="h-5 w-5" />
           </Button>
